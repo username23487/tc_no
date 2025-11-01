@@ -12,15 +12,12 @@ function rastgeleSayiUret(uzunluk) {
 }
 
 /**
- * Luhn Algoritması Temel Hesaplama Fonksiyonu. Kontrol basamağı hariç tüm haneleri alır.
- * @param {string} numara - Kontrol hanesi hariç kart numarası (N-1 hane)
- * @returns {number} Hesaplanan kontrol hanesi (0-9)
+ * Luhn Algoritması Temel Hesaplama Fonksiyonu.
  */
 function hesaplaLuhnKontrolHaneyi(numara) {
-    // Geçici olarak 0 eklenerek toplam hesaplanır
     let gecici_numara = numara + '0';
     let toplam = 0;
-    let cift_hane = false; // Sağdan başlayarak her ikinci hane
+    let cift_hane = false; 
 
     for (let i = gecici_numara.length - 1; i >= 0; i--) {
         let rakam = parseInt(gecici_numara.charAt(i), 10);
@@ -35,12 +32,59 @@ function hesaplaLuhnKontrolHaneyi(numara) {
         cift_hane = !cift_hane;
     }
     
-    // Luhn Algoritması gereği toplamın 10'a bölünmesinden kalan 0 olmalıdır.
     return (10 - (toplam % 10)) % 10;
 }
 
 
-// --- KART ÜRETİM FONKSİYONU ---
+// A=10, B=11, ... Z=35 dönüşümü (IBAN için gerekli)
+function convertLettersToNumbers(str) {
+    return str.split('').map(char => {
+        if (char >= 'A' && char <= 'Z') {
+            return (char.charCodeAt(0) - 'A'.charCodeAt(0) + 10).toString();
+        }
+        return char;
+    }).join('');
+}
+
+// --- IBAN KONTROLÜ (MOD 97) ---
+
+function ibanAlgoritmaKontrolu(iban_str) {
+    // 1. Temizlik ve Format Kontrolü (TR IBAN 26 karakter)
+    iban_str = iban_str.toUpperCase().replace(/\s/g, '');
+
+    if (iban_str.length === 0) {
+        return { sonucMetni: 'Lütfen IBAN hanelerini giriniz...', hataMi: false, durum: 'default' };
+    }
+    if (iban_str.length !== 26) {
+        const eksik_fazla = 26 - iban_str.length;
+        return { sonucMetni: `Hata: Türkiye IBAN'ı 26 karakter olmalıdır. (${eksik_fazla > 0 ? eksik_fazla + ' eksik' : -eksik_fazla + ' fazla'})`, hataMi: true, durum: 'error' };
+    }
+    if (!iban_str.startsWith('TR')) {
+        return { sonucMetni: 'Hata: Türkiye IBAN numarası TR ile başlamalıdır.', hataMi: true, durum: 'error' };
+    }
+
+    // 2. Düzeltme (İlk 4 karakteri sona taşı)
+    const duzenlenmis_iban = iban_str.substring(4) + iban_str.substring(0, 4); 
+
+    // 3. Harfleri Sayısallaştırma (A=10, T=29, R=27, Kalanlar Aynı)
+    const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
+    
+    // 4. Modulo 97 Kontrolü (Çok uzun sayılar için büyük sayı modu)
+    let kalan = 0;
+    for (let i = 0; i < sayisal_iban.length; i++) {
+        // Her yeni basamağı ekleyerek kalanı hesapla
+        kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97;
+    }
+    
+    // Geçerli bir IBAN için Modulo 97 sonucu 1 olmalıdır.
+    if (kalan === 1) {
+        return { sonucMetni: '✔ IBAN, Uluslararası MOD 97 Kontrolünden BAŞARIYLA GEÇTİ!', hataMi: false, durum: 'success' };
+    } else {
+        return { sonucMetni: `❌ IBAN, MOD 97 Kontrolünde BAŞARISIZ. (Kalan ${kalan}, 1 olmalıydı.)`, hataMi: true, durum: 'error' };
+    }
+}
+
+// --- KART ÜRETİM VE KONTROL (Önceki Kod) ---
 
 function kartUret() {
     const secim = document.getElementById('kart-marka-secim').value;
@@ -49,15 +93,13 @@ function kartUret() {
     
     let on_ek, hedef_uzunluk;
 
-    // Seçilen marka/uzunluğa göre önek ve uzunluğu belirle
     if (secim === '4_16') {
-        on_ek = '4' + rastgeleSayiUret(5); // 6 haneli BIN
+        on_ek = '4' + rastgeleSayiUret(5); 
         hedef_uzunluk = 16;
     } else if (secim === '5_16') {
         on_ek = '5' + rastgeleSayiUret(5); 
         hedef_uzunluk = 16;
     } else if (secim === '3_15') {
-        // Amex için 4 hane önek kullanıyoruz
         const amex_on_ekleri = ['34', '37'];
         on_ek = amex_on_ekleri[Math.floor(Math.random() * amex_on_ekleri.length)] + rastgeleSayiUret(2); 
         hedef_uzunluk = 15;
@@ -67,25 +109,18 @@ function kartUret() {
         return;
     }
 
-    const hesap_numarasi_uzunlugu = hedef_uzunluk - on_ek.length - 1; // -1 Kontrol hanesi için
-    
+    const hesap_numarasi_uzunlugu = hedef_uzunluk - on_ek.length - 1; 
     let gecici_numara = on_ek + rastgeleSayiUret(hesap_numarasi_uzunlugu);
     
-    // Kontrol hanesini hesapla ve numaraya ekle
     const kontrol_hanesi = hesaplaLuhnKontrolHaneyi(gecici_numara);
     const uretilen_kart_no = gecici_numara + kontrol_hanesi;
 
-    // Arayüze yaz
     inputAlan.value = uretilen_kart_no;
     sonucElement.innerHTML = `✅ ${kartMarkasiBelirle(uretilen_kart_no)} için **${hedef_uzunluk}** haneli kart üretildi. (Doğrulama başarılı!)`;
     sonucElement.classList.add('success-box');
     inputAlan.classList.add('success-border');
-    
-    // Not: Luhn doğrulamasını tekrar çalıştırmaya gerek yok, çünkü Luhn'a göre üretildi.
 }
 
-
-// --- KREDİ KARTI DOĞRULAMA & TAMAMLAMA ---
 
 function kartMarkasiBelirle(kart_no) {
     if (kart_no.startsWith('4')) {
@@ -118,9 +153,8 @@ function luhnAlgoritmasiKontrolu(kart_no) {
     }
     
     if (uzunluk > hedef_uzunluk) {
-        return { sonucMetci: `Hata: Girdiğiniz hane sayısı (${uzunluk}), seçilen (${hedef_uzunluk}) haneden fazladır.`, hataMi: true, durum: 'error' };
+        return { sonucMetni: `Hata: Girdiğiniz hane sayısı (${uzunluk}), seçilen (${hedef_uzunluk}) haneden fazladır.`, hataMi: true, durum: 'error' };
     }
-
 
     const hesaplaLuhnToplami = (numara) => {
         let toplam = 0;
@@ -141,7 +175,6 @@ function luhnAlgoritmasiKontrolu(kart_no) {
         return toplam;
     };
 
-    // --- DURUM 1: Tamamlama (Hedef uzunluktan 1 hane eksikse) ---
     if (uzunluk === hedef_uzunluk - 1) { 
         const kontrol_hanesi = hesaplaLuhnKontrolHaneyi(kart_no);
         const tamamlanmis_kart = kart_no + kontrol_hanesi;
@@ -153,7 +186,6 @@ function luhnAlgoritmasiKontrolu(kart_no) {
         };
     }
     
-    // --- DURUM 2: Doğrulama (Tam Hane Girildiyse) ---
     if (uzunluk === hedef_uzunluk) {
         const toplam = hesaplaLuhnToplami(kart_no);
 
@@ -164,7 +196,6 @@ function luhnAlgoritmasiKontrolu(kart_no) {
         }
     }
     
-    // --- DURUM 3: Eksik Hane (Tamamlama için yetersiz) ---
     if (uzunluk < hedef_uzunluk - 1) {
         const eksik_hane = hedef_uzunluk - uzunluk;
         return { sonucMetni: `Kartı tamamlamak için son ${eksik_hane} hane eksik. Tamamlama sadece son hane (kontrol basamağı) için yapılabilir.`, hataMi: false, durum: 'default' };
@@ -174,7 +205,7 @@ function luhnAlgoritmasiKontrolu(kart_no) {
 }
 
 
-// --- TCKN DOĞRULAMA & TAMAMLAMA (Kısaltılmış ve önceki yanıttan alınmıştır) ---
+// --- TCKN KONTROL (Önceki Kod) ---
 
 function tcknAlgoritmaKontrolu(tckn_str) {
     
@@ -247,9 +278,6 @@ function tcknAlgoritmaKontrolu(tckn_str) {
 
 // --- ANA YÖNLENDİRİCİ FONKSİYONLAR ---
 
-/**
- * Kart üretim grubu görünürken, doğrulama grubundaki uzunluk ayarını buna göre günceller
- */
 function setUretimHedefi() {
     const markaSecim = document.getElementById('kart-marka-secim').value;
     const uzunlukSecimElementi = document.getElementById('kart-uzunluk-secim');
@@ -263,10 +291,7 @@ function setUretimHedefi() {
         hedefUzunluk = 16;
     }
     
-    // Doğrulama/tamamlama grubundaki uzunluğu üretim hedefine göre değiştir
     uzunlukSecimElementi.value = hedefUzunluk;
-    
-    // Arayüzü güncellemek için calistirici çağrılır
     calistirici(); 
 }
 
@@ -276,31 +301,38 @@ function resetAndChangeProject() {
     const inputAlan = document.getElementById('input-alan');
     const inputLabel = document.getElementById('input-label');
     const kartUzunlukSecimGrup = document.getElementById('kart-uzunluk-secim-grup');
-    const kartUretimGrup = document.getElementById('kart-uretim-grup'); // Yeni üretim grubu
+    const kartUretimGrup = document.getElementById('kart-uretim-grup');
 
     inputAlan.value = '';
     
+    // Görüntüleme ayarları
+    kartUzunlukSecimGrup.style.display = 'none';
+    kartUretimGrup.style.display = 'none'; 
+
     if (secim === 'tckn') {
         inputLabel.innerHTML = "TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:";
         inputAlan.placeholder = "9 hane tamamlama yapar, 11 hane doğrular";
         inputAlan.maxLength = 11;
-        kartUzunlukSecimGrup.style.display = 'none'; 
-        kartUretimGrup.style.display = 'none'; // Üretim grubunu gizle
+        inputAlan.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
     } else if (secim === 'kredi_karti') {
-        // Kredi Kartı seçiliyse her iki grubu da göster
         kartUzunlukSecimGrup.style.display = 'block'; 
-        kartUretimGrup.style.display = 'block'; // Üretim grubunu göster
+        kartUretimGrup.style.display = 'block'; 
         
-        // Uzunluk seçimi ve input alanını güncelle
         const hedefUzunluk = document.getElementById('kart-uzunluk-secim').value; 
         inputLabel.innerHTML = `Kredi Kartı Numarasını Girin (Hedef: ${hedefUzunluk} hane):`;
         inputAlan.placeholder = `Tamamlama için ${hedefUzunluk - 1} hane girin.`;
         inputAlan.maxLength = 19; 
+        inputAlan.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+    } else if (secim === 'iban') {
+        inputLabel.innerHTML = "IBAN'ı Girin (TR ile başlayan 26 karakter):";
+        inputAlan.placeholder = "Örnek: TRKKBBBBBBBBBBBBBBBBBBBBBB";
+        inputAlan.maxLength = 26;
+        // IBAN büyük harf ve rakamlardan oluşur.
+        inputAlan.oninput = function() { this.value = this.value.toUpperCase().replace(/[^0-9A-Z]/g, ''); }; 
     }
     
-    // Sadece kart üretimi seçiliyse, üretim grubunu göster ve diğerlerini gizle
     if (secim === 'kredi_karti' && document.getElementById('kart-marka-secim')) {
-         setUretimHedefi(); // Uzunluğu üretim hedefine göre ayarlar
+         setUretimHedefi(); 
     }
     
     calistirici(); 
@@ -315,7 +347,6 @@ function calistirici() {
     const input_degeri = inputElement.value.trim();
     let sonuc;
 
-    // Sınır durumlar için border'ı sıfırla
     inputElement.classList.remove('error-border', 'success-border');
     
     if (secim === 'tckn') {
@@ -328,6 +359,8 @@ function calistirici() {
             document.getElementById('input-label').innerHTML = `Kredi Kartı Numarasını Girin (Hedef: ${hedefUzunluk} hane):`;
         }
         
+    } else if (secim === 'iban') {
+        sonuc = ibanAlgoritmaKontrolu(input_degeri);
     } else {
         sonuc = { sonucMetni: 'Lütfen bir proje seçin.', hataMi: false, durum: 'default' };
     }
@@ -335,8 +368,6 @@ function calistirici() {
     sonucElement.innerHTML = sonuc.sonucMetni;
     
     sonucElement.classList.remove('error-box', 'success-box');
-    inputElement.classList.remove('error-border', 'success-border');
-    inputElement.style.borderColor = ''; 
 
     if (sonuc.durum === 'error') {
         sonucElement.classList.add('error-box');
