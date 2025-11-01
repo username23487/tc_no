@@ -157,6 +157,7 @@
                 <option value="kredi_karti">💳 Kredi Kartı Doğrulama & Tamamlama</option>
                 <option value="iban">🏦 IBAN Kontrol (Mod 97)</option>
                 <option value="telefon">📱 Telefon Numarası Kontrol & Üretim</option>
+                <option value="eposta">📧 E-Posta Sözdizimi Kontrolü (Regex)</option>
             </select>
         </div>
 
@@ -172,6 +173,10 @@
                 <option value="turktelekom">Türk Telekom (50X/55X)</option>
             </select>
             <button class="action-button" onclick="telefonUret()">📱 Rastgele Numara Üret</button>
+        </div>
+        
+        <div id="eposta-uretim-grup" class="select-group" style="display:none;">
+            <button class="action-button" onclick="epostaUret()">📧 Rastgele Geçerli E-Posta Üret</button>
         </div>
         
         <div id="kart-uretim-grup" class="select-group" style="display:none;">
