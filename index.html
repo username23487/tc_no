@@ -156,6 +156,7 @@
                 <option value="tckn">🇹🇷 TCKN Kontrol & Tamamlama</option>
                 <option value="kredi_karti">💳 Kredi Kartı Doğrulama & Tamamlama</option>
                 <option value="iban">🏦 IBAN Kontrol (Mod 97)</option>
+                <option value="telefon">📱 Telefon Numarası Kontrol & Üretim</option>
             </select>
         </div>
 
@@ -163,6 +164,16 @@
             <button class="action-button" onclick="tcknUret()">🇹🇷 Rastgele Geçerli TCKN Üret</button>
         </div>
 
+        <div id="telefon-uretim-grup" class="select-group" style="display:none;">
+            <label for="operator-secim">Üretilecek Operatör:</label>
+            <select id="operator-secim">
+                <option value="turkcell">Turkcell (53X)</option>
+                <option value="vodafone">Vodafone (54X)</option>
+                <option value="turktelekom">Türk Telekom (50X/55X)</option>
+            </select>
+            <button class="action-button" onclick="telefonUret()">📱 Rastgele Numara Üret</button>
+        </div>
+        
         <div id="kart-uretim-grup" class="select-group" style="display:none;">
             <label for="kart-marka-secim">Üretilecek Kart Türü:</label>
             <select id="kart-marka-secim" onchange="setUretimHedefi()">
