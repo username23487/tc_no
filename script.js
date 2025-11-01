@@ -1,5 +1,6 @@
 // =========================================================================
-// == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (TÜM MODÜLLER VE PLAKA KISITLAMALARI)
+// == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (TÜM MODÜLLER VE KONTROLLER)
+// == TÜM HATALAR VE EKSİK PLAKA FORMATLARI DÜZELTİLMİŞTİR (Örn: 55 CZ 956)
 // =========================================================================
 
 // --- 1. GENEL PROJE YAPILANDIRMASI (CONFIG) ---
@@ -101,8 +102,7 @@ function convertLettersToNumbers(str) {
         if (char >= 'A' && char <= 'Z') {
             return (char.charCodeAt(0) - 'A'.charCodeAt(0) + 10).toString();
         }
-        // Türkçe karakterler için de bir karşılık gerekebilir, ancak standart IBAN'da TR dışında kullanılmaz.
-        // TR IBAN'da harfler sadece 'TR' kodunda kullanılır ve Mod 97 hesaplamasında sayısallaştırılır.
+        // Türkçe karakterler de dahil olmak üzere harfleri sayısallaştırırken sadece A-Z baz alınır.
         return char; 
     }).join('');
 }
@@ -548,7 +548,7 @@ const Algoritma = {
             if (uzunluk < 8 || uzunluk > 30) return ''; 
             
             const setler = CONFIG.SIFRE_KARAKTER_SETLERI;
-            const tumKarakterler = setler.buyukHarf + setler.kucukKarakter + setler.rakam + setler.ozelKarakter;
+            const tumKarakterler = setler.buyukHarf + setler.kucukHarf + setler.rakam + setler.ozelKarakter;
             let sifre = '';
             
             sifre += setler.buyukHarf.charAt(Math.floor(Math.random() * setler.buyukHarf.length));
@@ -629,8 +629,13 @@ const Algoritma = {
             // 7 Karakterli (5 hane Kontrol Parçası) Formatlar:
             if (uzunluk === 7) { 
                 if (toplam_uzunluk_kontrol_parcasi === 5) {
-                    // 1 Harf + 4 Rakam (Örn: 34 A 1234) VEYA 3 Harf + 2 Rakam (Örn: 34 ABC 12)
-                    if ( (harf_uzunluk === 1 && rakam_uzunluk === 4) || (harf_uzunluk === 3 && rakam_uzunluk === 2) ) {
+                    // Geçerli 7 hane formatları:
+                    // 1. 1 Harf + 4 Rakam (Örn: 34 A 1234)
+                    // 2. 3 Harf + 2 Rakam (Örn: 34 ABC 12)
+                    // 3. 2 Harf + 3 Rakam (Örn: 55 CZ 956) <-- YENİ EKLENEN KRİTİK FORMAT
+                    if ( (harf_uzunluk === 1 && rakam_uzunluk === 4) || 
+                         (harf_uzunluk === 3 && rakam_uzunluk === 2) || 
+                         (harf_uzunluk === 2 && rakam_uzunluk === 3) ) { 
                         return { sonucMetni: `✅ Plaka Numarası **Geçerli 7 Karakterli Format** kurallarına uymaktadır. **İl Kodu:** ${il_kodu}`, durum: CONFIG.UI_DURUMLARI.BASARI };
                     }
                 }
@@ -638,7 +643,9 @@ const Algoritma = {
             // 8 Karakterli (6 hane Kontrol Parçası) Formatlar:
             else if (uzunluk === 8) {
                 if (toplam_uzunluk_kontrol_parcasi === 6) {
-                    // 2 Harf + 4 Rakam (Örn: 34 AB 1234) VEYA 3 Harf + 3 Rakam (Örn: 34 ABC 123)
+                    // Geçerli 8 hane formatları:
+                    // 1. 2 Harf + 4 Rakam (Örn: 34 AB 1234)
+                    // 2. 3 Harf + 3 Rakam (Örn: 34 ABC 123)
                     if ( (harf_uzunluk === 2 && rakam_uzunluk === 4) || (harf_uzunluk === 3 && rakam_uzunluk === 3) ) {
                         return { sonucMetni: `✅ Plaka Numarası **Geçerli 8 Karakterli Format** kurallarına uymaktadır. **İl Kodu:** ${il_kodu}`, durum: CONFIG.UI_DURUMLARI.BASARI };
                     }
@@ -655,24 +662,28 @@ const Algoritma = {
         uret() {
             const rastgele_il = CONFIG.PLAKA_KODLARI[Math.floor(Math.random() * CONFIG.PLAKA_KODLARI.length)];
             
-            // Plaka formatını seç (1: 7 hane, 2: 8 hane)
-            const format_tipi = Math.random() < 0.5 ? 7 : 8; 
+            // Plaka formatını seç (1: 7 hane, 2: 8 hane, 3: Yeni 7 hane formatı)
+            const format_secenekleri = [7, 8, 7.5]; // 7.5 = 2 Harf + 3 Rakam (Yeni Format)
+            const format_tipi = format_secenekleri[Math.floor(Math.random() * format_secenekleri.length)];
             
             let harf_uzunluk, rakam_uzunluk;
 
             if (format_tipi === 7) {
-                // 7 Hane (İl kodu hariç 5 hane): (1 Harf + 4 Rakam) VEYA (3 Harf + 2 Rakam)
+                // Standart 7 Hane: (1 Harf + 4 Rakam) VEYA (3 Harf + 2 Rakam)
                 if (Math.random() < 0.5) {
-                    harf_uzunluk = 1; rakam_uzunluk = 4; // 34 A 1234
+                    harf_uzunluk = 1; rakam_uzunluk = 4; 
                 } else {
-                    harf_uzunluk = 3; rakam_uzunluk = 2; // 34 ABC 12
+                    harf_uzunluk = 3; rakam_uzunluk = 2; 
                 }
+            } else if (format_tipi === 7.5) {
+                // YENİ EK: 2 Harf + 3 Rakam
+                harf_uzunluk = 2; rakam_uzunluk = 3;
             } else { // 8 Hane
-                // 8 Hane (İl kodu hariç 6 hane): (2 Harf + 4 Rakam) VEYA (3 Harf + 3 Rakam)
+                // 8 Hane: (2 Harf + 4 Rakam) VEYA (3 Harf + 3 Rakam)
                 if (Math.random() < 0.5) {
-                    harf_uzunluk = 2; rakam_uzunluk = 4; // 34 AB 1234
+                    harf_uzunluk = 2; rakam_uzunluk = 4; 
                 } else {
-                    harf_uzunluk = 3; rakam_uzunluk = 3; // 34 ABC 123
+                    harf_uzunluk = 3; rakam_uzunluk = 3; 
                 }
             }
             
@@ -929,8 +940,7 @@ function resetAndChangeProject() {
         placeholderText = "Boşluklu veya boşluksuz girebilirsiniz. (7-8 hane kontrolü yapılır)";
         maxLength = 12; 
         onInputFunc = function() { 
-            // Plaka özelinde sadece büyük harfe çevirip, boşlukları sileriz.
-            // Türkçe karakterler plaka kontrolünde kalmalıdır.
+            // Plaka özelinde sadece büyük harfe çevirir. Türkçe karakterler kalır.
             this.value = this.value.toUpperCase(); 
             calistirici(); 
         };
