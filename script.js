@@ -29,7 +29,6 @@ function luhnAlgoritmasiKontrolu(kart_no) {
     const uzunluk = kart_no.length;
     const kart_markasi = kartMarkasiBelirle(kart_no);
     
-    // HTML'den seçilen hedef uzunluğu al
     const hedef_uzunluk_element = document.getElementById('kart-uzunluk-secim');
     const hedef_uzunluk = hedef_uzunluk_element ? parseInt(hedef_uzunluk_element.value, 10) : 16;
 
@@ -39,7 +38,7 @@ function luhnAlgoritmasiKontrolu(kart_no) {
     }
     
     if (uzunluk > hedef_uzunluk) {
-        return { sonucMetni: `Hata: Girdiğiniz hane sayısı, seçilen (${hedef_uzunluk}) haneden fazladır.`, hataMi: true, durum: 'error' };
+        return { sonucMetni: `Hata: Girdiğiniz hane sayısı (${uzunluk}), seçilen (${hedef_uzunluk}) haneden fazladır.`, hataMi: true, durum: 'error' };
     }
 
 
@@ -99,7 +98,8 @@ function luhnAlgoritmasiKontrolu(kart_no) {
 }
 
 
-// --- TCKN DOĞRULAMA & TAMAMLAMA (Önceki Fonksiyon) ---
+// --- TCKN DOĞRULAMA & TAMAMLAMA ---
+
 function tcknAlgoritmaKontrolu(tckn_str) {
     
     const tckn_uzunluk = tckn_str.length;
@@ -183,14 +183,16 @@ function resetAndChangeProject() {
         inputLabel.innerHTML = "TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:";
         inputAlan.placeholder = "9 hane tamamlama yapar, 11 hane doğrular";
         inputAlan.maxLength = 11;
-        kartUzunlukSecimGrup.style.display = 'none';
+        // TCKN seçiliyse GİZLE
+        kartUzunlukSecimGrup.style.display = 'none'; 
     } else if (secim === 'kredi_karti') {
-        // Hedef uzunluğu seçime göre belirle
+        // Kredi Kartı seçiliyse GÖSTER
+        kartUzunlukSecimGrup.style.display = 'block'; 
+        
         const hedefUzunluk = document.getElementById('kart-uzunluk-secim').value; 
         inputLabel.innerHTML = `Kredi Kartı Numarasını Girin (Hedef: ${hedefUzunluk} hane):`;
         inputAlan.placeholder = `${hedefUzunluk - 1} hane girin, son haneyi tamamlayalım.`;
         inputAlan.maxLength = 19; // Maksimum 19 hane girilebilir
-        kartUzunlukSecimGrup.style.display = 'block';
     }
     
     calistirici(); 
