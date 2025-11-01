@@ -1,6 +1,5 @@
 // =========================================================================
-// == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (GÜNCELLENMİŞ SON VERSİYON)
-// == GİDERİLEN HATA: IBAN Üretimi 26 Hane Yerine 24 Hane Üretiyordu.
+// == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (TÜM MODÜLLER VE PLAKA KISITLAMALARI)
 // =========================================================================
 
 // --- 1. GENEL PROJE YAPILANDIRMASI (CONFIG) ---
@@ -27,6 +26,11 @@ const CONFIG = {
         troy: { onEk: '9792', uzunluk: 16 }
     },
     
+    PLAKA_KODLARI: Array.from({ length: 81 }, (_, i) => (i + 1).toString().padStart(2, '0')),
+    // GÜNCELLEME: Ç,Ş,İ,Ö,Ü,Ğ, Q, W, X harfleri plaka harf gruplarında kullanılmaz.
+    YASAKLI_TURKCE_HARFLER: ['Ç', 'Ş', 'İ', 'Ö', 'Ü', 'Ğ', 'Q', 'W', 'X'], 
+    YASAKLI_PLAKA_KELIMELER: ['KEL', 'LAN', 'NAH', 'APO', 'PKK', 'MAL', 'LEN', 'APP'], 
+
     UI_DURUMLARI: {
         HATA: 'error',
         BASARI: 'success',
@@ -42,7 +46,7 @@ function rastgeleSayiUret(uzunluk, ilkHaneSifirOlamaz = false) {
     let numara = '';
     for (let i = 0; i < uzunluk; i++) {
         let rakam = Math.floor(Math.random() * 10);
-        if (i === 0 && ilkHaneSifirOlamaz && uzunluk > 1) { // 1 haneli kontrolü de ekledik
+        if (i === 0 && ilkHaneSifirOlamaz && uzunluk > 1) { 
             rakam = Math.floor(Math.random() * 9) + 1; 
         }
         numara += rakam;
@@ -52,6 +56,20 @@ function rastgeleSayiUret(uzunluk, ilkHaneSifirOlamaz = false) {
 
 function rastgeleKarakterUret(uzunluk) {
     const karakterler = 'abcdefghijklmnopqrstuvwxyz0123456789'; 
+    let sonuc = '';
+    for (let i = 0; i < uzunluk; i++) {
+        sonuc += karakterler.charAt(Math.floor(Math.random() * karakterler.length));
+    }
+    return sonuc;
+}
+
+function rastgeleHarfUret(uzunluk) { // Yasaklı Türkçe Harfleri ve Q,W,X'i İçermez
+    const yasakli = CONFIG.YASAKLI_TURKCE_HARFLER;
+    let karakterler = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; 
+    
+    // Yasaklı harfleri listeden filtreleyip çıkarır.
+    karakterler = karakterler.split('').filter(char => !yasakli.includes(char)).join('');
+    
     let sonuc = '';
     for (let i = 0; i < uzunluk; i++) {
         sonuc += karakterler.charAt(Math.floor(Math.random() * karakterler.length));
@@ -84,6 +102,35 @@ function convertLettersToNumbers(str) {
         }
         return char; 
     }).join('');
+}
+
+function panoyaKopyala(metin) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Modern Tarayıcılar (HTTPS veya Localhost)
+        navigator.clipboard.writeText(metin).then(() => {
+            // Başarılı kopyalama logu (konsolda görünür)
+        }).catch(err => {
+            console.error("Panoya kopyalama hatası (navigator.clipboard): ", err);
+        });
+        return true;
+    } else {
+        // Eski yöntem (Geriye dönük uyumluluk)
+        const textArea = document.createElement("textarea");
+        textArea.value = metin;
+        textArea.style.position = "fixed"; 
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return true;
+        } catch (err) {
+            document.body.removeChild(textArea);
+            return false;
+        }
+    }
 }
 
 
@@ -121,12 +168,12 @@ const Algoritma = {
 
             if (uzunluk === 9) {
                 const tamamlanmis_vkn = ilk_9_hane + String(hesaplanan_kontrol);
-                return { sonucMetni: `➡️ **TAMAMLANMIŞ VKN:** <span style="color: var(--primary-color); font-weight: bold;">${tamamlanmis_vkn}</span> (Hesaplanan Kontrol Basamağı: ${hesaplanan_kontrol})`, durum: CONFIG.UI_DURUMLARI.BASARI };
+                return { sonucMetni: `➡️ **TAMAMLANMIŞ VKN:** <span style="color: var(--primary-color); font-weight: bold;">${tamamlanmis_vkn}</span> (Hesaplanan Kontrol Basamagi: ${hesaplanan_kontrol})`, durum: CONFIG.UI_DURUMLARI.BASARI };
             }
 
             const girilen_kontrol = parseInt(vkn_str.charAt(9));
             if (girilen_kontrol === hesaplanan_kontrol) {
-                return { sonucMetni: `✅ Vergi Kimlik Numarası Algoritmayı Başarıyla Geçti! **(Doğruluk Onaylandı)**`, durum: CONFIG.UI_DURUMLARI.BASARI };
+                return { sonucMetni: `✅ Vergi Kimlik Numarası Algoritmayi Başarıyla Geçti! **(Doğruluk Onaylandi)**`, durum: CONFIG.UI_DURUMLARI.BASARI };
             } else {
                 const dogru_vkn = ilk_9_hane + String(hesaplanan_kontrol);
                 return { sonucMetni: `❌ VKN Doğrulama Başarısız. Girilen: ${vkn_str}. **Doğru VKN:** ${dogru_vkn}. (Kontrol Basamağı ${girilen_kontrol} yerine ${hesaplanan_kontrol} olmalıydı.)`, durum: CONFIG.UI_DURUMLARI.HATA };
@@ -294,10 +341,10 @@ const Algoritma = {
 
             if (uzunluk < 4) return { sonucMetni: `⌛ IBAN Tamamlama İçin İlk 4 karakteri (TR ve Kontrol Haneleri) giriniz.`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
             
-            const gerekli_bb_uzunlugu = 22; // BBAN (Banka Hesap Numarası) kısmı uzunluğu. Toplam 26 hane için 22 hane + TR (2) + Kontrol (2)
+            const gerekli_bb_uzunlugu = 22; 
 
             // --- IBAN TAMAMLAMA LOGİĞİ (24. Hane Kontrolü) ---
-            if (uzunluk === gerekli_bb_uzunlugu + 2) { // 24 karakter (TR + 00 + BBAN) girilince çalışır
+            if (uzunluk === gerekli_bb_uzunlugu + 2) { 
                 const kontrolsuz_iban = iban_str.substring(0, 2) + '00' + iban_str.substring(4);
                 const duzenlenmis_iban = kontrolsuz_iban.substring(4) + kontrolsuz_iban.substring(0, 4); 
                 const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
@@ -342,10 +389,8 @@ const Algoritma = {
             const banka_kodu = rastgeleSayiUret(5); 
             const rezerv_alan = '0'; 
             
-            // HATA DÜZELTİLDİ: Hesap numarasının ilk 2 hanesini rastgele üreterek,
-            // 5 (Banka Kodu) + 1 (Rezerv) + 16 (Hesap No) = 22 hane BBAN'ı garanti ediyoruz.
-            const hesap_no_ilk_2 = rastgeleSayiUret(2); // YAPI: TRKKBBBBBRRRRRRRRRRRRRRRR
-            const hesap_numarasi = hesap_no_ilk_2 + rastgeleSayiUret(14); // Toplam 16 hane
+            const hesap_no_ilk_2 = rastgeleSayiUret(2); 
+            const hesap_numarasi = hesap_no_ilk_2 + rastgeleSayiUret(14); 
             
             let hesaplama_parcasi = banka_kodu + rezerv_alan + hesap_numarasi + ulke_kodu + '00';
             const sayisal_iban = convertLettersToNumbers(hesaplama_parcasi);
@@ -358,7 +403,6 @@ const Algoritma = {
             let kontrol_basamagi = 98 - kalan;
             let kontrol_str = kontrol_basamagi.toString().padStart(2, '0'); 
             
-            // Üretilen IBAN'ın 26 karakter olduğunu kontrol et
             const tam_iban = ulke_kodu + kontrol_str + banka_kodu + rezerv_alan + hesap_numarasi;
             if (tam_iban.length !== 26) {
                  console.error("HATA: Üretilen IBAN 26 hane değil!");
@@ -504,6 +548,122 @@ const Algoritma = {
             
             return sifre.split('').sort(() => 0.5 - Math.random()).join('');
         }
+    },
+    
+    // --- PLAKA MODÜLÜ ---
+    plaka: {
+        
+        plakaHarfKontrol(harf_grubu) {
+            // Yasaklı Türkçe harfleri ve standart dışı Q, W, X'i kontrol et
+            for (const yasakliHarf of CONFIG.YASAKLI_TURKCE_HARFLER) {
+                if (harf_grubu.includes(yasakliHarf)) {
+                    return { hata: true, mesaj: `❌ Plakada Yasaklı Harf Tespiti. (**${yasakliHarf}**) kullanılamaz. (Türkçe karakter veya Q, W, X)` };
+                }
+            }
+            
+            // Yasaklı kelimeleri kontrol et (KEL, LAN, APO vb.)
+            for (const yasakliKelime of CONFIG.YASAKLI_PLAKA_KELIMELER) {
+                if (harf_grubu.includes(yasakliKelime)) {
+                    return { hata: true, mesaj: `❌ Yasaklı Kelime: **${yasakliKelime}** harf dizisi plakada bulunamaz.` };
+                }
+            }
+            
+            return { hata: false };
+        },
+        
+        kontrol(plaka_str) {
+            plaka_str = plaka_str.toUpperCase().replace(/[^0-9A-Z]/g, ''); 
+            const uzunluk = plaka_str.length;
+
+            if (uzunluk === 0) return { sonucMetni: '⚠️ Plaka Kontrolü İçin Lütfen numarayı giriniz.', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
+            if (uzunluk < 7 || uzunluk > 8) return { sonucMetni: `❌ Plaka Format Hatası: Türkiye plakaları **7 veya 8 karakterden** oluşmalıdır (İl kodu dahil). Girilen: ${uzunluk} hane.`, durum: CONFIG.UI_DURUMLARI.HATA };
+            
+            const il_kodu = plaka_str.substring(0, 2);
+            if (!CONFIG.PLAKA_KODLARI.includes(il_kodu)) {
+                return { sonucMetni: `❌ Şehir Kodu Hatası: Plaka ilk iki hanesi (${il_kodu}), geçerli bir İl Kodu (01-81) değildir.`, durum: CONFIG.UI_DURUMLARI.HATA };
+            }
+
+            const harf_grup_regex_match = plaka_str.substring(2).match(/([A-Z]+)(\d+)/);
+            if (!harf_grup_regex_match || harf_grup_regex_match.length < 3) {
+                 return { sonucMetni: `❌ Plaka Numarası Geçersiz Format. İl Kodu doğru, ancak harf/rakam dizilimi hatalı. Örn: 34ABC123`, durum: CONFIG.UI_DURUMLARI.HATA };
+            }
+            
+            const harf_grubu = harf_grup_regex_match[1];
+            const rakam_grubu = harf_grup_regex_match[2];
+            
+            // 1. KONTROL: Yasaklı Harf ve Kelime Kontrolü
+            const harfKontrolSonucu = Algoritma.plaka.plakaHarfKontrol(harf_grubu);
+            if (harfKontrolSonucu.hata) {
+                return { sonucMetni: harfKontrolSonucu.mesaj, durum: CONFIG.UI_DURUMLARI.HATA };
+            }
+            
+            // 2. KONTROL: Format Kısıtlamaları (Harf Uzunluğuna Göre Rakam Uzunluğu)
+            const harf_uzunluk = harf_grubu.length;
+            const rakam_uzunluk = rakam_grubu.length;
+            const toplam_uzunluk_kontrol_parcasi = harf_uzunluk + rakam_uzunluk; // İl kodu hariç
+
+            // 7 Karakterli (5 hane Kontrol Parçası) Formatlar:
+            if (uzunluk === 7) { 
+                if (toplam_uzunluk_kontrol_parcasi === 5) {
+                    // 1 Harf + 4 Rakam (Örn: 34 A 1234) VEYA 3 Harf + 2 Rakam (Örn: 34 ABC 12)
+                    if ( (harf_uzunluk === 1 && rakam_uzunluk === 4) || (harf_uzunluk === 3 && rakam_uzunluk === 2) ) {
+                        return { sonucMetni: `✅ Plaka Numarası **Geçerli 7 Karakterli Format** kurallarına uymaktadır. **İl Kodu:** ${il_kodu}`, durum: CONFIG.UI_DURUMLARI.BASARI };
+                    }
+                }
+            } 
+            // 8 Karakterli (6 hane Kontrol Parçası) Formatlar:
+            else if (uzunluk === 8) {
+                if (toplam_uzunluk_kontrol_parcasi === 6) {
+                    // 2 Harf + 4 Rakam (Örn: 34 AB 1234) VEYA 3 Harf + 3 Rakam (Örn: 34 ABC 123)
+                    if ( (harf_uzunluk === 2 && rakam_uzunluk === 4) || (harf_uzunluk === 3 && rakam_uzunluk === 3) ) {
+                        return { sonucMetni: `✅ Plaka Numarası **Geçerli 8 Karakterli Format** kurallarına uymaktadır. **İl Kodu:** ${il_kodu}`, durum: CONFIG.UI_DURUMLARI.BASARI };
+                    }
+                }
+            }
+            
+            // Eğer yukarıdaki özel 7 veya 8 hane kombinasyonlarına uymazsa:
+            return { 
+                sonucMetni: `❌ Plaka Formatı Uyumsuz. İl kodu hariç **${toplam_uzunluk_kontrol_parcasi}** hane var. Format: ${harf_uzunluk} Harf + ${rakam_uzunluk} Rakam. Standartlar 7 veya 8 toplam hane gerektirir.`, 
+                durum: CONFIG.UI_DURUMLARI.HATA 
+            };
+        },
+
+        uret() {
+            const rastgele_il = CONFIG.PLAKA_KODLARI[Math.floor(Math.random() * CONFIG.PLAKA_KODLARI.length)];
+            
+            // Plaka formatını seç (1: 7 hane, 2: 8 hane)
+            const format_tipi = Math.random() < 0.5 ? 7 : 8; 
+            
+            let harf_uzunluk, rakam_uzunluk;
+
+            if (format_tipi === 7) {
+                // 7 Hane (İl kodu hariç 5 hane): (1 Harf + 4 Rakam) VEYA (3 Harf + 2 Rakam)
+                if (Math.random() < 0.5) {
+                    harf_uzunluk = 1; rakam_uzunluk = 4; // 34 A 1234
+                } else {
+                    harf_uzunluk = 3; rakam_uzunluk = 2; // 34 ABC 12
+                }
+            } else { // 8 Hane
+                // 8 Hane (İl kodu hariç 6 hane): (2 Harf + 4 Rakam) VEYA (3 Harf + 3 Rakam)
+                if (Math.random() < 0.5) {
+                    harf_uzunluk = 2; rakam_uzunluk = 4; // 34 AB 1234
+                } else {
+                    harf_uzunluk = 3; rakam_uzunluk = 3; // 34 ABC 123
+                }
+            }
+            
+            let harf_grup;
+            let deneme_sayisi = 0;
+            do {
+                harf_grup = rastgeleHarfUret(harf_uzunluk);
+                deneme_sayisi++;
+            } while (CONFIG.YASAKLI_PLAKA_KELIMELER.some(kelime => harf_grup.includes(kelime)) && deneme_sayisi < 10);
+            
+            const rakam_grup = rastgeleSayiUret(rakam_uzunluk);
+            
+            const uretilen_plaka = `${rastgele_il} ${harf_grup} ${rakam_grup}`;
+            return uretilen_plaka.toUpperCase();
+        }
     }
 };
 
@@ -538,7 +698,6 @@ function calistirici() {
     const secim = document.getElementById('proje-secim').value;
     let sonuc = { sonucMetni: 'Lütfen doğru bir proje seçimi yapınız ve kontrol işlemine başlayınız.', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
 
-    // *** KRİTİK NOKTA: switch (secim) ve case değerlerinin HTML value ile eşleşmesi ***
     switch (secim) {
         case 'vkn': 
             sonuc = Algoritma.vkn.kontrol(input_degeri); 
@@ -560,6 +719,9 @@ function calistirici() {
             break;
         case 'sifre': 
             sonuc = Algoritma.sifre.kontrol(input_degeri); 
+            break;
+        case 'plaka':
+            sonuc = Algoritma.plaka.kontrol(input_degeri);
             break;
         default:
             sonuc = { sonucMetni: 'Lütfen listeden geçerli bir doğrulama projesi seçiniz.', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
@@ -615,8 +777,25 @@ function sifreUret() {
     const sifre = Algoritma.sifre.uret();
     const kontrolSonucu = Algoritma.sifre.kontrol(sifre);
     document.getElementById('input-alan').value = sifre;
-    updateUI(sifre, { sonucMetni: `🔑 **Şifre Üretildi.** Sonuç: ${kontrolSonucu.sonucMetni}`, durum: kontrolSonucu.durum });
+    
+    let kopyalamaDurumu = panoyaKopyala(sifre);
+
+    let sonucMetni = kontrolSonucu.sonucMetni;
+    if (kopyalamaDurumu) {
+         sonucMetni = `🔑 **Şifre Üretildi ve Panoya Kopyalandı.** Sonuç: ${kontrolSonucu.sonucMetni}`;
+    } else {
+         sonucMetni = `🔑 **Şifre Üretildi.** Kopyalanamadı, lütfen manuel kopyalayın. Sonuç: ${kontrolSonucu.sonucMetni}`;
+    }
+    
+    updateUI(sifre, { sonucMetni: sonucMetni, durum: kontrolSonucu.durum });
 }
+
+function plakaUret() {
+    const plaka = Algoritma.plaka.uret();
+    document.getElementById('input-alan').value = plaka;
+    updateUI(plaka, { sonucMetni: `🚘 **Rastgele GEÇERLİ Plaka Üretildi.** (Format: ${plaka})`, durum: CONFIG.UI_DURUMLARI.BASARI });
+}
+
 
 // --- 6. PROJE VE ARAYÜZ DURUM YÖNETİMİ ---
 
@@ -640,7 +819,7 @@ function resetAndChangeProject() {
     
     const gruplar = [
         'vkn-uretim-grup', 'tckn-uretim-grup', 'kredi-karti-grup', 'iban-uretim-grup', 
-        'telefon-uretim-grup', 'eposta-uretim-grup', 'sifre-uretim-grup', 
+        'telefon-uretim-grup', 'eposta-uretim-grup', 'sifre-uretim-grup', 'plaka-uretim-grup', 
         'kart-marka-secim-grup', 'kart-uzunluk-secim-grup', 'operator-secim-grup'
     ];
     gruplar.forEach(id => { 
@@ -720,6 +899,15 @@ function resetAndChangeProject() {
         placeholderText = "Güçlü şifre kurallarını karşılayınız.";
         maxLength = 50;
         inputAlan.type = 'password'; 
+    } else if (secim === 'plaka') {
+        document.getElementById('plaka-uretim-grup').style.display = 'flex';
+        labelText = "Türkiye Plaka Numarasını Girin (Örn: 34 ABC 123):";
+        placeholderText = "Boşluklu veya boşluksuz girebilirsiniz. (7-8 hane kontrolü yapılır)";
+        maxLength = 12; 
+        onInputFunc = function() { 
+            this.value = this.value.toUpperCase(); 
+            calistirici(); 
+        };
     }
     
     inputLabel.innerHTML = labelText;

@@ -22,7 +22,7 @@
                 <option value="telefon">5. GSM Telefon Numarası</option>
                 <option value="eposta">6. E-Posta Adresi (Sözdizimi)</option>
                 <option value="sifre">7. Şifre Gücü Kontrolü</option>
-            </select>
+                <option value="plaka">8. Türkiye Plaka Numarası</option> </select>
         </div>
 
         <div class="input-area">
@@ -83,6 +83,10 @@
                     <input type="number" id="sifre-uzunluk" value="12" min="8" max="30" class="readonly-input">
                 </div>
                 <button onclick="sifreUret()" class="uret-button">Güçlü Şifre Üret</button>
+            </div>
+            
+            <div id="plaka-uretim-grup" class="control-group" style="display: none;">
+                <button onclick="plakaUret()" class="uret-button">Rastgele Geçerli Plaka Üret</button>
             </div>
             
         </div>
