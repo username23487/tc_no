@@ -35,7 +35,6 @@ function hesaplaLuhnKontrolHaneyi(numara) {
     return (10 - (toplam % 10)) % 10;
 }
 
-
 // A=10, B=11, ... Z=35 dönüşümü (IBAN için gerekli)
 function convertLettersToNumbers(str) {
     return str.split('').map(char => {
@@ -46,10 +45,55 @@ function convertLettersToNumbers(str) {
     }).join('');
 }
 
+
+// --- IBAN ÜRETİM FONKSİYONU ---
+
+function ibanUret() {
+    const inputAlan = document.getElementById('input-alan');
+    const sonucElement = document.getElementById('sonuc');
+
+    // 1. Banka ve Hesap Alanlarını Rastgele Doldur (TR IBAN 26 karakterdir)
+    const ulke_kodu = 'TR'; // 2 Karakter
+    const banka_kodu = rastgeleSayiUret(5); // 5 Hane (BBBBB)
+    const rezerv_alan = '0'; // 1 Hane (R)
+    const hesap_numarasi = rastgeleSayiUret(16); // 16 Hane (CCCCCCCCCCCCCCCC)
+    
+    // 2. Kontrol basamakları (XX) hariç tüm parçaları birleştir (IBAN_N)
+    // Format: Ülke Kodu (2) + Kontrol Basamağı (2) + Banka Kodu (5) + Rezerv (1) + Hesap No (16) = 26
+    
+    // Kontrol basamağını hesaplamak için numara: Banka Kodu + Rezerv + Hesap No + Ülke Kodu + "00"
+    // Bu numara 22 karakterdir: 5 + 1 + 16 + 2 + 2 = 26
+    let hesaplama_parcasi = banka_kodu + rezerv_alan + hesap_numarasi + ulke_kodu + '00';
+    
+    // 3. Harfleri Sayısallaştırma (T=29, R=27)
+    const sayisal_iban = convertLettersToNumbers(hesaplama_parcasi);
+    
+    // 4. Modulo 97 hesaplama
+    let kalan = 0;
+    for (let i = 0; i < sayisal_iban.length; i++) {
+        kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97;
+    }
+    
+    // 5. Kontrol basamağını bul: 98 - (Kalan)
+    let kontrol_basamagi = 98 - kalan;
+    
+    // Tek haneli ise başına 0 ekle (Örn: 9 -> 09)
+    let kontrol_str = kontrol_basamagi.toString().padStart(2, '0');
+
+    // 6. Nihai IBAN'ı oluştur
+    const uretilen_iban = ulke_kodu + kontrol_str + banka_kodu + rezerv_alan + hesap_numarasi;
+    
+    // Arayüze yaz
+    inputAlan.value = uretilen_iban;
+    sonucElement.innerHTML = `🏦 **GEÇERLİ IBAN ÜRETİLDİ.** Kontrol: ${kontrol_str}. Doğrulama başarılı!`;
+    sonucElement.classList.add('success-box');
+    inputAlan.classList.add('success-border');
+}
+
+
 // --- IBAN KONTROLÜ (MOD 97) ---
 
 function ibanAlgoritmaKontrolu(iban_str) {
-    // 1. Temizlik ve Format Kontrolü (TR IBAN 26 karakter)
     iban_str = iban_str.toUpperCase().replace(/\s/g, '');
 
     if (iban_str.length === 0) {
@@ -63,20 +107,14 @@ function ibanAlgoritmaKontrolu(iban_str) {
         return { sonucMetni: 'Hata: Türkiye IBAN numarası TR ile başlamalıdır.', hataMi: true, durum: 'error' };
     }
 
-    // 2. Düzeltme (İlk 4 karakteri sona taşı)
     const duzenlenmis_iban = iban_str.substring(4) + iban_str.substring(0, 4); 
-
-    // 3. Harfleri Sayısallaştırma (A=10, T=29, R=27, Kalanlar Aynı)
     const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
     
-    // 4. Modulo 97 Kontrolü (Çok uzun sayılar için büyük sayı modu)
     let kalan = 0;
     for (let i = 0; i < sayisal_iban.length; i++) {
-        // Her yeni basamağı ekleyerek kalanı hesapla
         kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97;
     }
     
-    // Geçerli bir IBAN için Modulo 97 sonucu 1 olmalıdır.
     if (kalan === 1) {
         return { sonucMetni: '✔ IBAN, Uluslararası MOD 97 Kontrolünden BAŞARIYLA GEÇTİ!', hataMi: false, durum: 'success' };
     } else {
@@ -84,7 +122,8 @@ function ibanAlgoritmaKontrolu(iban_str) {
     }
 }
 
-// --- KART ÜRETİM VE KONTROL (Önceki Kod) ---
+
+// --- KART ÜRETİM VE KONTROL (Önceki Kodlar) ---
 
 function kartUret() {
     const secim = document.getElementById('kart-marka-secim').value;
@@ -302,12 +341,14 @@ function resetAndChangeProject() {
     const inputLabel = document.getElementById('input-label');
     const kartUzunlukSecimGrup = document.getElementById('kart-uzunluk-secim-grup');
     const kartUretimGrup = document.getElementById('kart-uretim-grup');
+    const ibanUretimGrup = document.getElementById('iban-uretim-grup'); // Yeni IBAN grubu
 
     inputAlan.value = '';
     
-    // Görüntüleme ayarları
+    // Görüntüleme ayarları (Önce hepsini gizle)
     kartUzunlukSecimGrup.style.display = 'none';
     kartUretimGrup.style.display = 'none'; 
+    ibanUretimGrup.style.display = 'none'; // IBAN grubunu gizle
 
     if (secim === 'tckn') {
         inputLabel.innerHTML = "TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:";
@@ -323,16 +364,15 @@ function resetAndChangeProject() {
         inputAlan.placeholder = `Tamamlama için ${hedefUzunluk - 1} hane girin.`;
         inputAlan.maxLength = 19; 
         inputAlan.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+        
+        setUretimHedefi(); // Uzunluk seçimini üretim hedefine göre ayarla
     } else if (secim === 'iban') {
+        ibanUretimGrup.style.display = 'block'; // IBAN grubunu göster
+        
         inputLabel.innerHTML = "IBAN'ı Girin (TR ile başlayan 26 karakter):";
-        inputAlan.placeholder = "Örnek: TRKKBBBBBBBBBBBBBBBBBBBBBB";
+        inputAlan.placeholder = "Örnek: TRKKBBBBBRRRRCCCCCCCCCCCCCCCC";
         inputAlan.maxLength = 26;
-        // IBAN büyük harf ve rakamlardan oluşur.
         inputAlan.oninput = function() { this.value = this.value.toUpperCase().replace(/[^0-9A-Z]/g, ''); }; 
-    }
-    
-    if (secim === 'kredi_karti' && document.getElementById('kart-marka-secim')) {
-         setUretimHedefi(); 
     }
     
     calistirici(); 
