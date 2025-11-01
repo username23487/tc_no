@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EggApps Algoritma Kontrol Merkezi</title>
     <style>
-        /* ... Önceki CSS kodları burada devam ediyor ... */
         :root {
             --primary-color: #ff9900;
             --background-color: #f4f7f6;
@@ -54,20 +53,24 @@
             letter-spacing: 1px;
         }
         
-        /* Yeni Select (Seçim Kutusu) Stilleri */
         select {
             width: 100%;
             padding: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 1em;
-            appearance: none; /* Varsayılan stil okunu kaldır */
+            appearance: none;
             background-color: #fff;
             background-image: url('data:image/svg+xml;utf8,<svg fill="%23333333" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
             background-repeat: no-repeat;
             background-position: right 10px top 50%;
             background-size: 16px;
+        }
+        
+        /* Yeni: Seçim alanlarını ayırmak için */
+        .select-group {
+            margin-bottom: 20px;
         }
 
         label {
@@ -129,13 +132,25 @@
         <span class="eggapps">EggApps</span>
         <h1>🧮 Algoritma Kontrol Merkezi</h1>
         
-        <label for="proje-secim">Proje Seçiniz:</label>
-        <select id="proje-secim" onchange="resetAndChangeProject()">
-            <option value="tckn">🇹🇷 TCKN Kontrol & Tamamlama</option>
-            <option value="kredi_karti">💳 Kredi Kartı Doğrulama</option>
-        </select>
+        <div class="select-group">
+            <label for="proje-secim">Proje Seçiniz:</label>
+            <select id="proje-secim" onchange="resetAndChangeProject()">
+                <option value="tckn">🇹🇷 TCKN Kontrol & Tamamlama</option>
+                <option value="kredi_karti">💳 Kredi Kartı Doğrulama & Tamamlama</option>
+            </select>
+        </div>
+
+        <div id="kart-uzunluk-secim-grup" class="select-group" style="display:none;">
+            <label for="kart-uzunluk-secim">Hedef Kart Uzunluğu:</label>
+            <select id="kart-uzunluk-secim" onchange="calistirici()">
+                <option value="16">16 Hane (Visa/Mastercard/Troy)</option>
+                <option value="15">15 Hane (Amex)</option>
+                <option value="13">13 Hane</option>
+                <option value="19">19 Hane</option>
+            </select>
+        </div>
         
-        <label id="input-label" for="tckn-input">TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:</label>
+        <label id="input-label" for="input-alan">TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:</label>
         <input 
             type="text" 
             id="input-alan" 

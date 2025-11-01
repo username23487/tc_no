@@ -23,25 +23,30 @@ function kartMarkasiBelirle(kart_no) {
 
 /**
  * Kredi kartı numarasını Luhn Algoritması (Mod 10) ile doğrular VEYA tamamlar.
- * @param {string} kart_no - Kredi kartı numarası.
- * @returns {object} { sonucMetni: string, hataMi: boolean, durum: 'default'|'success'|'error' }
  */
 function luhnAlgoritmasiKontrolu(kart_no) {
     kart_no = kart_no.replace(/\s/g, ''); 
     const uzunluk = kart_no.length;
     const kart_markasi = kartMarkasiBelirle(kart_no);
+    
+    // HTML'den seçilen hedef uzunluğu al
+    const hedef_uzunluk_element = document.getElementById('kart-uzunluk-secim');
+    const hedef_uzunluk = hedef_uzunluk_element ? parseInt(hedef_uzunluk_element.value, 10) : 16;
+
 
     if (uzunluk === 0) {
         return { sonucMetni: 'Lütfen kart hanelerini giriniz...', hataMi: false, durum: 'default' };
     }
-    if (uzunluk < 13) {
-        return { sonucMetni: `Geçerli bir kart 13-19 hane olmalıdır. Kart Markası: ${kart_markasi}`, hataMi: false, durum: 'default' };
-    }
     
+    if (uzunluk > hedef_uzunluk) {
+        return { sonucMetni: `Hata: Girdiğiniz hane sayısı, seçilen (${hedef_uzunluk}) haneden fazladır.`, hataMi: true, durum: 'error' };
+    }
+
+
     // Luhn Algoritması Temel Hesaplama Fonksiyonu
     const hesaplaLuhnToplami = (numara) => {
         let toplam = 0;
-        let cift_hane = false; // Sağdan başlayarak her ikinci hane
+        let cift_hane = false; 
 
         for (let i = numara.length - 1; i >= 0; i--) {
             let rakam = parseInt(numara.charAt(i), 10);
@@ -58,11 +63,9 @@ function luhnAlgoritmasiKontrolu(kart_no) {
         return toplam;
     };
 
-    // --- DURUM 1: Tamamlama (Son Hane Eksikse ve Uzunluk Mantıklıysa) ---
-    // Eğer kart 13, 15 veya 16 haneden 1 hane eksikse (örn. 15 hane girdisi)
-    // Tamamlama için kullanılan tipik uzunluklar: 12, 14, 15
-    if ((uzunluk === 12 || uzunluk === 14 || uzunluk === 15)) { 
-        const tamamlanacak_numara = kart_no + '0'; // Kontrol hanesi yerine 0 koyarak toplamı bul
+    // --- DURUM 1: Tamamlama (Hedef uzunluktan 1 hane eksikse) ---
+    if (uzunluk === hedef_uzunluk - 1) { 
+        const tamamlanacak_numara = kart_no + '0'; 
         const toplam = hesaplaLuhnToplami(tamamlanacak_numara);
         
         const kontrol_hanesi = (10 - (toplam % 10)) % 10;
@@ -76,7 +79,7 @@ function luhnAlgoritmasiKontrolu(kart_no) {
     }
     
     // --- DURUM 2: Doğrulama (Tam Hane Girildiyse) ---
-    if (uzunluk >= 13 && uzunluk <= 19) {
+    if (uzunluk === hedef_uzunluk) {
         const toplam = hesaplaLuhnToplami(kart_no);
 
         if (toplam % 10 === 0) {
@@ -86,21 +89,22 @@ function luhnAlgoritmasiKontrolu(kart_no) {
         }
     }
     
-    return { sonucMetni: `Lütfen ${uzunluk} haneli kart numarasını kontrol edin. (13-19 hane)`, hataMi: false, durum: 'default' };
+    // --- DURUM 3: Eksik Hane (Tamamlama için yetersiz) ---
+    if (uzunluk < hedef_uzunluk - 1) {
+        const eksik_hane = hedef_uzunluk - uzunluk;
+        return { sonucMetni: `Kartı tamamlamak için son ${eksik_hane} hane eksik. Tamamlama sadece son hane (kontrol basamağı) için yapılabilir.`, hataMi: false, durum: 'default' };
+    }
+    
+    return { sonucMetni: `Kartı tamamlamak için ${hedef_uzunluk - 1} hane girmelisiniz.`, hataMi: false, durum: 'default' };
 }
 
 
-// --- TCKN DOĞRULAMA & TAMAMLAMA ---
-
-/**
- * TCKN Algoritma Kontrollerini Gerçekleştirir.
- */
+// --- TCKN DOĞRULAMA & TAMAMLAMA (Önceki Fonksiyon) ---
 function tcknAlgoritmaKontrolu(tckn_str) {
     
     const tckn_uzunluk = tckn_str.length;
     const varsayilan_yanit = { sonucMetni: 'Lütfen TCKN hanelerini giriniz...', hataMi: false, durum: 'default' };
 
-    // 1. Temel Kontroller
     if (tckn_uzunluk === 0) {
         return varsayilan_yanit;
     }
@@ -133,7 +137,6 @@ function tcknAlgoritmaKontrolu(tckn_str) {
     const ilk_10_toplami = rakamlar.reduce((toplam, mevcut) => toplam + mevcut, 0) + algoritma_10_hane;
     const algoritma_11_hane = ilk_10_toplami % 10;
 
-    // --- DURUM 1: TCKN Tamamlama (9 hane girildiyse) ---
     if (tckn_uzunluk === 9) {
         const tamamlanmis_tckn = ilk_9_hane + String(algoritma_10_hane) + String(algoritma_11_hane);
         
@@ -144,7 +147,6 @@ function tcknAlgoritmaKontrolu(tckn_str) {
         };
     }
 
-    // --- DURUM 2: TCKN Doğrulama (11 hane girildiyse) ---
     if (tckn_uzunluk === 11) {
         const girilen_10 = parseInt(tckn_str.charAt(9));
         const girilen_11 = parseInt(tckn_str.charAt(10));
@@ -169,35 +171,32 @@ function tcknAlgoritmaKontrolu(tckn_str) {
 
 // --- ANA YÖNLENDİRİCİ FONKSİYONLAR ---
 
-/**
- * Seçilen projeye göre HTML arayüzünü günceller (Sadece etiket ve max uzunluk).
- */
 function resetAndChangeProject() {
     const secim = document.getElementById('proje-secim').value;
     const inputAlan = document.getElementById('input-alan');
     const inputLabel = document.getElementById('input-label');
+    const kartUzunlukSecimGrup = document.getElementById('kart-uzunluk-secim-grup');
     
-    // Değerleri temizle
     inputAlan.value = '';
     
     if (secim === 'tckn') {
         inputLabel.innerHTML = "TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:";
         inputAlan.placeholder = "9 hane tamamlama yapar, 11 hane doğrular";
         inputAlan.maxLength = 11;
+        kartUzunlukSecimGrup.style.display = 'none';
     } else if (secim === 'kredi_karti') {
-        inputLabel.innerHTML = "Kredi Kartı Numarasını Girin (13-19 hane):";
-        inputAlan.placeholder = "Doğrulama için tüm haneleri girin (Boşluksuz)";
-        inputAlan.maxLength = 19; 
+        // Hedef uzunluğu seçime göre belirle
+        const hedefUzunluk = document.getElementById('kart-uzunluk-secim').value; 
+        inputLabel.innerHTML = `Kredi Kartı Numarasını Girin (Hedef: ${hedefUzunluk} hane):`;
+        inputAlan.placeholder = `${hedefUzunluk - 1} hane girin, son haneyi tamamlayalım.`;
+        inputAlan.maxLength = 19; // Maksimum 19 hane girilebilir
+        kartUzunlukSecimGrup.style.display = 'block';
     }
     
-    // Arayüzü temizle ve varsayılan başlatıcıyı çağır
     calistirici(); 
 }
 
 
-/**
- * Ana çalıştırıcı. Seçime göre doğru algoritma fonksiyonunu çağırır.
- */
 function calistirici() {
     const inputElement = document.getElementById('input-alan');
     const sonucElement = document.getElementById('sonuc');
@@ -206,21 +205,26 @@ function calistirici() {
     const input_degeri = inputElement.value.trim();
     let sonuc;
 
-    // Yönlendirme
     if (secim === 'tckn') {
         sonuc = tcknAlgoritmaKontrolu(input_degeri);
     } else if (secim === 'kredi_karti') {
         sonuc = luhnAlgoritmasiKontrolu(input_degeri);
+        
+        // Kredi kartı seçiliyken hedef uzunluk değiştiyse input label'ı güncelle
+        if (document.getElementById('kart-uzunluk-secim-grup').style.display === 'block') {
+            const hedefUzunluk = document.getElementById('kart-uzunluk-secim').value; 
+            document.getElementById('input-label').innerHTML = `Kredi Kartı Numarasını Girin (Hedef: ${hedefUzunluk} hane):`;
+        }
+        
     } else {
         sonuc = { sonucMetni: 'Lütfen bir proje seçin.', hataMi: false, durum: 'default' };
     }
 
     sonucElement.innerHTML = sonuc.sonucMetni;
     
-    // Sınıflandırma ve Vurgulama Yönetimi (Input ve Sonuç Kutusu)
     sonucElement.classList.remove('error-box', 'success-box');
     inputElement.classList.remove('error-border', 'success-border');
-    inputElement.style.borderColor = ''; // Varsayılanı sıfırla
+    inputElement.style.borderColor = ''; 
 
     if (sonuc.durum === 'error') {
         sonucElement.classList.add('error-box');
@@ -231,5 +235,4 @@ function calistirici() {
     }
 }
 
-// Sayfa yüklendiğinde bir kez çalıştır
 document.addEventListener('DOMContentLoaded', calistirici);
