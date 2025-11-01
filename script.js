@@ -27,7 +27,7 @@ const CONFIG = {
     },
     
     PLAKA_KODLARI: Array.from({ length: 81 }, (_, i) => (i + 1).toString().padStart(2, '0')),
-    // GÜNCELLEME: Ç,Ş,İ,Ö,Ü,Ğ, Q, W, X harfleri plaka harf gruplarında kullanılmaz.
+    // GÜNCEL KISITLAMALAR: Türkçe karakterler ve Q, W, X harfleri plaka harf gruplarında kullanılmaz.
     YASAKLI_TURKCE_HARFLER: ['Ç', 'Ş', 'İ', 'Ö', 'Ü', 'Ğ', 'Q', 'W', 'X'], 
     YASAKLI_PLAKA_KELIMELER: ['KEL', 'LAN', 'NAH', 'APO', 'PKK', 'MAL', 'LEN', 'APP'], 
 
@@ -96,10 +96,13 @@ function hesaplaLuhnKontrolHaneyi(numara) {
 }
 
 function convertLettersToNumbers(str) {
+    // Harfleri (A=10, B=11... Z=35) sayısal karşılıklarına çevirir.
     return str.split('').map(char => {
         if (char >= 'A' && char <= 'Z') {
             return (char.charCodeAt(0) - 'A'.charCodeAt(0) + 10).toString();
         }
+        // Türkçe karakterler için de bir karşılık gerekebilir, ancak standart IBAN'da TR dışında kullanılmaz.
+        // TR IBAN'da harfler sadece 'TR' kodunda kullanılır ve Mod 97 hesaplamasında sayısallaştırılır.
         return char; 
     }).join('');
 }
@@ -336,34 +339,49 @@ const Algoritma = {
             
             if (uzunluk === 0) return { sonucMetni: '⚠️ IBAN Kontrolü İçin Lütfen karakterleri girmeye başlayınız.', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
             if (uzunluk > 26) return { sonucMetni: '❌ Hata: Türkiye IBAN\'ı 26 karakterden fazla olamaz.', durum: CONFIG.UI_DURUMLARI.HATA };
-            if (!iban_str.startsWith('TR')) return { sonucMetci: '❌ Hata: Türkiye IBAN numarası zorunlu olarak "TR" ülke kodu ile başlamalıdır.', durum: CONFIG.UI_DURUMLARI.HATA };
+            if (!iban_str.startsWith('TR')) return { sonucMetni: '❌ Hata: Türkiye IBAN numarası zorunlu olarak "TR" ülke kodu ile başlamalıdır.', durum: CONFIG.UI_DURUMLARI.HATA };
             if (!/^[0-9A-Z]+$/.test(iban_str)) return { sonucMetni: '❌ Hata: IBAN sadece sayı ve büyük harf içermelidir.', durum: CONFIG.UI_DURUMLARI.HATA };
 
-            if (uzunluk < 4) return { sonucMetni: `⌛ IBAN Tamamlama İçin İlk 4 karakteri (TR ve Kontrol Haneleri) giriniz.`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
-            
-            const gerekli_bb_uzunlugu = 22; 
+            const gerekli_bb_uzunlugu = 22; // Banka Kodu + Rezerv + Hesap No.
+            const kontrol_hane_pozisyonu = 2; // Kontrol haneleri (3. ve 4. hane)
 
-            // --- IBAN TAMAMLAMA LOGİĞİ (24. Hane Kontrolü) ---
-            if (uzunluk === gerekli_bb_uzunlugu + 2) { 
-                const kontrolsuz_iban = iban_str.substring(0, 2) + '00' + iban_str.substring(4);
-                const duzenlenmis_iban = kontrolsuz_iban.substring(4) + kontrolsuz_iban.substring(0, 4); 
-                const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
-                
-                let kalan = 0;
-                for (let i = 0; i < sayisal_iban.length; i++) { 
-                    kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97; 
+            // TRXX (4 hane) girildiyse bile mod 97 ile doğrulama yapamayız, tamamlamaya odaklanalım.
+            if (uzunluk < 26) {
+                const eksikHane = 26 - uzunluk;
+                if (uzunluk <= kontrol_hane_pozisyonu) {
+                    return { sonucMetni: `⌛ IBAN'ı kontrol etmek veya tamamlamak için **${eksikHane} hane** daha girmelisiniz. (Toplam 26 hane)`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
+                }
+
+                // Hesap numarasının tamamı (22 hane) girilmişse, kontrol hanesini hesapla ve tamamla
+                if (uzunluk === gerekli_bb_uzunlugu + kontrol_hane_pozisyonu) { 
+                    const hesap_parcasi = iban_str.substring(4);
+                    
+                    // Kontrol hanelerini 00 kabul ederek hesapla
+                    const kontrolsuz_iban = iban_str.substring(0, kontrol_hane_pozisyonu) + '00' + hesap_parcasi;
+                    
+                    // Hesaplama için yer değiştirme (Örn: TR00 + Hesap No -> Hesap No + TR00)
+                    const duzenlenmis_iban = kontrolsuz_iban.substring(kontrol_hane_pozisyonu + 2) + kontrolsuz_iban.substring(0, kontrol_hane_pozisyonu + 2); 
+                    const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
+                    
+                    let kalan = 0;
+                    for (let i = 0; i < sayisal_iban.length; i++) { 
+                        kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97; 
+                    }
+                    
+                    let kontrol_basamagi = 98 - kalan;
+                    let kontrol_str = kontrol_basamagi.toString().padStart(2, '0');
+                    
+                    const tamamlanmis_iban = iban_str.substring(0, kontrol_hane_pozisyonu) + kontrol_str + hesap_parcasi;
+                    
+                    return { sonucMetni: `➡️ **TAMAMLANMIŞ IBAN:** <span style="color: var(--primary-color); font-weight: bold;">${tamamlanmis_iban}</span> (Hesaplanan Kontrol Haneleri: ${kontrol_str})`, durum: CONFIG.UI_DURUMLARI.BASARI };
                 }
                 
-                let kontrol_basamagi = 98 - kalan;
-                let kontrol_str = kontrol_basamagi.toString().padStart(2, '0');
-                
-                const tamamlanmis_iban = iban_str.substring(0, 2) + kontrol_str + iban_str.substring(4);
-                
-                return { sonucMetni: `➡️ **TAMAMLANMIŞ IBAN:** <span style="color: var(--primary-color); font-weight: bold;">${tamamlanmis_iban}</span> (Hesaplanan Kontrol Haneleri: ${kontrol_str})`, durum: CONFIG.UI_DURUMLARI.BASARI };
+                return { sonucMetni: `⌛ IBAN'ı kontrol etmek veya tamamlamak için **${eksikHane} hane** daha girmelisiniz. (Toplam 26 hane)`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
             }
 
             // --- TAM IBAN DOĞRULAMA LOGİĞİ (26 HANE KONTROLÜ) ---
             if (uzunluk === 26) {
+                // Kontrol hanesini de içeren IBAN'ı Mod 97 için düzenle
                 const duzenlenmis_iban = iban_str.substring(4) + iban_str.substring(0, 4); 
                 const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
                 
@@ -379,19 +397,15 @@ const Algoritma = {
                     return { sonucMetni: `❌ IBAN, MOD 97 Kontrolünde BAŞARISIZ. (Kalan ${kalan}, 1 olmalıydı.) **Doğru Kontrol Haneleri:** ${hesaplanan_kontrol}`, durum: CONFIG.UI_DURUMLARI.HATA }; 
                 }
             }
-
-            const eksikHane = 26 - uzunluk;
-            return { sonucMetni: `⌛ IBAN'ı kontrol etmek veya tamamlamak için **${eksikHane} hane** daha girmelisiniz. (Toplam 26 hane)`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
         },
 
         uret() {
             const ulke_kodu = 'TR'; 
             const banka_kodu = rastgeleSayiUret(5); 
             const rezerv_alan = '0'; 
+            const hesap_numarasi = rastgeleSayiUret(16); 
             
-            const hesap_no_ilk_2 = rastgeleSayiUret(2); 
-            const hesap_numarasi = hesap_no_ilk_2 + rastgeleSayiUret(14); 
-            
+            // Kontrol hanesi hesaplaması için (TR + 00 + Banka/Rezerv/Hesap No)
             let hesaplama_parcasi = banka_kodu + rezerv_alan + hesap_numarasi + ulke_kodu + '00';
             const sayisal_iban = convertLettersToNumbers(hesaplama_parcasi);
             
@@ -534,7 +548,7 @@ const Algoritma = {
             if (uzunluk < 8 || uzunluk > 30) return ''; 
             
             const setler = CONFIG.SIFRE_KARAKTER_SETLERI;
-            const tumKarakterler = setler.buyukHarf + setler.kucukHarf + setler.rakam + setler.ozelKarakter;
+            const tumKarakterler = setler.buyukHarf + setler.kucukKarakter + setler.rakam + setler.ozelKarakter;
             let sifre = '';
             
             sifre += setler.buyukHarf.charAt(Math.floor(Math.random() * setler.buyukHarf.length));
@@ -572,18 +586,28 @@ const Algoritma = {
         },
         
         kontrol(plaka_str) {
-            plaka_str = plaka_str.toUpperCase().replace(/[^0-9A-Z]/g, ''); 
-            const uzunluk = plaka_str.length;
+            // KRİTİK GÜNCELLEME: Sadece boşlukları siliyoruz. Türkçe karakterler ve diğer harfler KALIYOR.
+            // Böylece, plakaHarfKontrol fonksiyonu yasaklı karakterleri (Ö, Ü, Ç, Ş, İ, Ğ) yakalayabilir.
+            let temizlenmis_str = plaka_str.toUpperCase().replace(/\s/g, ''); 
+            
+            // Yasadışı karakter kontrolü (sadece harf ve rakam olmalı)
+            // Harf setine Türkçe karakterleri de ekliyoruz ki, sadece semboller yasaklansın.
+            if (temizlenmis_str.length > 0 && !/^[0-9A-ZÖÜĞİŞÇ]+$/.test(temizlenmis_str)) {
+                 return { sonucMetni: '❌ Plaka sadece Harf (Türkçe dahil) ve Rakam içermelidir (Özel karakter/Sembol yasak).', durum: CONFIG.UI_DURUMLARI.HATA };
+            }
+
+            const uzunluk = temizlenmis_str.length;
 
             if (uzunluk === 0) return { sonucMetni: '⚠️ Plaka Kontrolü İçin Lütfen numarayı giriniz.', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
             if (uzunluk < 7 || uzunluk > 8) return { sonucMetni: `❌ Plaka Format Hatası: Türkiye plakaları **7 veya 8 karakterden** oluşmalıdır (İl kodu dahil). Girilen: ${uzunluk} hane.`, durum: CONFIG.UI_DURUMLARI.HATA };
             
-            const il_kodu = plaka_str.substring(0, 2);
+            const il_kodu = temizlenmis_str.substring(0, 2);
             if (!CONFIG.PLAKA_KODLARI.includes(il_kodu)) {
                 return { sonucMetni: `❌ Şehir Kodu Hatası: Plaka ilk iki hanesi (${il_kodu}), geçerli bir İl Kodu (01-81) değildir.`, durum: CONFIG.UI_DURUMLARI.HATA };
             }
 
-            const harf_grup_regex_match = plaka_str.substring(2).match(/([A-Z]+)(\d+)/);
+            // Harf grubunu bulurken Türkçe karakterleri de harf olarak kabul etmeliyiz.
+            const harf_grup_regex_match = temizlenmis_str.substring(2).match(/([A-ZÖÜĞİŞÇ]+)(\d+)/);
             if (!harf_grup_regex_match || harf_grup_regex_match.length < 3) {
                  return { sonucMetni: `❌ Plaka Numarası Geçersiz Format. İl Kodu doğru, ancak harf/rakam dizilimi hatalı. Örn: 34ABC123`, durum: CONFIG.UI_DURUMLARI.HATA };
             }
@@ -591,7 +615,7 @@ const Algoritma = {
             const harf_grubu = harf_grup_regex_match[1];
             const rakam_grubu = harf_grup_regex_match[2];
             
-            // 1. KONTROL: Yasaklı Harf ve Kelime Kontrolü
+            // 1. KRİTİK KONTROL: Yasaklı Harf ve Kelime Kontrolü (Ö,Ü,İ,Ş,Ç,Ğ ve Q,W,X'i yakalar)
             const harfKontrolSonucu = Algoritma.plaka.plakaHarfKontrol(harf_grubu);
             if (harfKontrolSonucu.hata) {
                 return { sonucMetni: harfKontrolSonucu.mesaj, durum: CONFIG.UI_DURUMLARI.HATA };
@@ -905,6 +929,8 @@ function resetAndChangeProject() {
         placeholderText = "Boşluklu veya boşluksuz girebilirsiniz. (7-8 hane kontrolü yapılır)";
         maxLength = 12; 
         onInputFunc = function() { 
+            // Plaka özelinde sadece büyük harfe çevirip, boşlukları sileriz.
+            // Türkçe karakterler plaka kontrolünde kalmalıdır.
             this.value = this.value.toUpperCase(); 
             calistirici(); 
         };
