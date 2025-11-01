@@ -79,6 +79,7 @@
             font-size: 0.9em;
         }
 
+        /* Input alanı ve butonlar */
         input[type="text"] {
             width: calc(100% - 20px);
             padding: 12px 10px;
@@ -90,6 +91,24 @@
             text-align: center;
             transition: border-color 0.3s;
         }
+        
+        .action-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .action-button:hover {
+            background-color: #e68a00;
+        }
+
 
         input[type="text"].error-border {
             border-color: var(--error-color) !important;
@@ -138,6 +157,17 @@
                 <option value="kredi_karti">💳 Kredi Kartı Doğrulama & Tamamlama</option>
             </select>
         </div>
+
+        <div id="kart-uretim-grup" class="select-group" style="display:none;">
+            <label for="kart-marka-secim">Üretilecek Kart Türü:</label>
+            <select id="kart-marka-secim" onchange="setUretimHedefi()">
+                <option value="4_16">Visa (4xxx - 16 Hane)</option>
+                <option value="5_16">Mastercard (5xxx - 16 Hane)</option>
+                <option value="3_15">Amex (34xx/37xx - 15 Hane)</option>
+            </select>
+            <button class="action-button" onclick="kartUret()">⭐ Rastgele Kart Üret</button>
+        </div>
+
 
         <div id="kart-uzunluk-secim-grup" class="select-group" style="display:none;">
             <label for="kart-uzunluk-secim">Hedef Kart Uzunluğu:</label>
