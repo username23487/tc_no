@@ -1,45 +1,92 @@
-// --- KREDİ KARTI DOĞRULAMA (LUHN ALGORİTMASI) ---
+// --- KREDİ KARTI DOĞRULAMA & TAMAMLAMA (LUHN ALGORİTMASI) ---
 
 /**
- * Kredi kartı numarasını Luhn Algoritması (Mod 10) ile doğrular.
- * @param {string} kart_no - Kredi kartı numarası (13-19 hane).
+ * Kartın ilk hanelerine göre markasını belirler.
+ */
+function kartMarkasiBelirle(kart_no) {
+    if (kart_no.startsWith('4')) {
+        return 'Visa 🛡️';
+    } else if (kart_no.startsWith('51') || kart_no.startsWith('52') || kart_no.startsWith('53') || kart_no.startsWith('54') || kart_no.startsWith('55')) {
+        return 'Mastercard 💳';
+    } else if (kart_no.startsWith('34') || kart_no.startsWith('37')) {
+        return 'American Express (Amex) ✈️';
+    } else if (kart_no.startsWith('6011') || kart_no.startsWith('65')) {
+        return 'Discover 🌟';
+    } else if (kart_no.startsWith('35')) {
+        return 'JCB 🇯🇵';
+    } else if (kart_no.startsWith('9792')) {
+        return 'Troy 🇹🇷';
+    }
+    return 'Bilinmeyen Kart Türü';
+}
+
+
+/**
+ * Kredi kartı numarasını Luhn Algoritması (Mod 10) ile doğrular VEYA tamamlar.
+ * @param {string} kart_no - Kredi kartı numarası.
  * @returns {object} { sonucMetni: string, hataMi: boolean, durum: 'default'|'success'|'error' }
  */
 function luhnAlgoritmasiKontrolu(kart_no) {
-    kart_no = kart_no.replace(/\s/g, ''); // Boşlukları kaldır
+    kart_no = kart_no.replace(/\s/g, ''); 
     const uzunluk = kart_no.length;
+    const kart_markasi = kartMarkasiBelirle(kart_no);
 
+    if (uzunluk === 0) {
+        return { sonucMetni: 'Lütfen kart hanelerini giriniz...', hataMi: false, durum: 'default' };
+    }
     if (uzunluk < 13) {
-        return { sonucMetni: `Geçerli bir kart numarası 13-19 hane olmalıdır.`, hataMi: false, durum: 'default' };
+        return { sonucMetni: `Geçerli bir kart 13-19 hane olmalıdır. Kart Markası: ${kart_markasi}`, hataMi: false, durum: 'default' };
     }
     
-    if (uzunluk > 19) {
-        return { sonucMetni: `Hata: Kart numarası 19 haneden fazla olamaz.`, hataMi: true, durum: 'error' };
-    }
+    // Luhn Algoritması Temel Hesaplama Fonksiyonu
+    const hesaplaLuhnToplami = (numara) => {
+        let toplam = 0;
+        let cift_hane = false; // Sağdan başlayarak her ikinci hane
 
-    let toplam = 0;
-    let cift_hane = false; // Sağdan başlayarak her ikinci hane
+        for (let i = numara.length - 1; i >= 0; i--) {
+            let rakam = parseInt(numara.charAt(i), 10);
 
-    // Sağdan sola döngü
-    for (let i = uzunluk - 1; i >= 0; i--) {
-        let rakam = parseInt(kart_no.charAt(i), 10);
-
-        if (cift_hane) {
-            rakam *= 2;
-            if (rakam > 9) {
-                rakam -= 9; // Veya rakam = rakam - 9
+            if (cift_hane) {
+                rakam *= 2;
+                if (rakam > 9) {
+                    rakam -= 9;
+                }
             }
+            toplam += rakam;
+            cift_hane = !cift_hane;
         }
+        return toplam;
+    };
 
-        toplam += rakam;
-        cift_hane = !cift_hane; // Bir sonraki hane için durumu değiştir
-    }
+    // --- DURUM 1: Tamamlama (Son Hane Eksikse ve Uzunluk Mantıklıysa) ---
+    // Eğer kart 13, 15 veya 16 haneden 1 hane eksikse (örn. 15 hane girdisi)
+    // Tamamlama için kullanılan tipik uzunluklar: 12, 14, 15
+    if ((uzunluk === 12 || uzunluk === 14 || uzunluk === 15)) { 
+        const tamamlanacak_numara = kart_no + '0'; // Kontrol hanesi yerine 0 koyarak toplamı bul
+        const toplam = hesaplaLuhnToplami(tamamlanacak_numara);
+        
+        const kontrol_hanesi = (10 - (toplam % 10)) % 10;
+        const tamamlanmis_kart = kart_no + kontrol_hanesi;
 
-    if (toplam % 10 === 0) {
-        return { sonucMetni: `✔ Kart Numarası Luhn Algoritmasını GEÇTİ.`, hataMi: false, durum: 'success' };
-    } else {
-        return { sonucMetni: `❌ Kart Numarası Luhn Algoritmasında BAŞARISIZ.`, hataMi: true, durum: 'error' };
+        return { 
+            sonucMetni: `Marka: ${kart_markasi}. **Eksik Son Hane:** ${kontrol_hanesi}. Tamamı: ${tamamlanmis_kart}`, 
+            hataMi: false, 
+            durum: 'success' 
+        };
     }
+    
+    // --- DURUM 2: Doğrulama (Tam Hane Girildiyse) ---
+    if (uzunluk >= 13 && uzunluk <= 19) {
+        const toplam = hesaplaLuhnToplami(kart_no);
+
+        if (toplam % 10 === 0) {
+            return { sonucMetni: `✔ Kart (${kart_markasi}) Luhn Algoritmasını GEÇTİ.`, hataMi: false, durum: 'success' };
+        } else {
+            return { sonucMetni: `❌ Kart (${kart_markasi}) Luhn Algoritmasında BAŞARISIZ.`, hataMi: true, durum: 'error' };
+        }
+    }
+    
+    return { sonucMetni: `Lütfen ${uzunluk} haneli kart numarasını kontrol edin. (13-19 hane)`, hataMi: false, durum: 'default' };
 }
 
 
@@ -68,7 +115,6 @@ function tcknAlgoritmaKontrolu(tckn_str) {
         return { sonucMetni: "Hata: TCKN'nin ilk hanesi sıfır olamaz.", hataMi: true, durum: 'error' };
     }
 
-    // (TCKN hesaplama mantığı önceki yanıttaki gibi devam eder)
     const ilk_9_hane = tckn_str.substring(0, 9);
     const rakamlar = ilk_9_hane.split('').map(Number);
     let tek_haneler_toplami = 0;
