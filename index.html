@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EggApps TCKN Tamamlayıcı</title>
+    <title>EggApps TCKN Tamamlayıcı & Doğrulayıcı</title>
     <style>
         :root {
             --primary-color: #ff9900;
@@ -11,7 +11,8 @@
             --card-background: #ffffff;
             --text-color: #333;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            --error-color: #dc3545; /* Hata rengi */
+            --error-color: #dc3545;
+            --success-color: #28a745;
         }
         
         body {
@@ -63,7 +64,7 @@
             width: calc(100% - 20px);
             padding: 12px 10px;
             margin-bottom: 20px;
-            border: 1px solid #ddd;
+            border: 2px solid #ddd;
             border-radius: 6px;
             box-sizing: content-box;
             font-size: 1.1em;
@@ -71,9 +72,12 @@
             transition: border-color 0.3s;
         }
 
-        /* Hata durumunda input'u renklendir */
         input[type="text"].error-border {
-            border-color: var(--error-color);
+            border-color: var(--error-color) !important;
+        }
+        
+        input[type="text"].success-border {
+            border-color: var(--success-color) !important;
         }
 
         #sonuc {
@@ -89,11 +93,16 @@
             transition: all 0.3s;
         }
 
-        /* Hata durumunda sonuç kutusunu renklendir */
         #sonuc.error-box {
             border-color: var(--error-color);
-            background-color: #f8d7da; /* Açık kırmızı arka plan */
+            background-color: #f8d7da;
             color: var(--error-color);
+        }
+        
+        #sonuc.success-box {
+            border-color: var(--success-color);
+            background-color: #d4edda;
+            color: var(--success-color);
         }
         
     </style>
@@ -101,20 +110,20 @@
 <body>
     <div class="container"> 
         <span class="eggapps">EggApps</span>
-        <h1>🇹🇷 TCKN Kontrol Basamakları Tamamlayıcı</h1>
+        <h1>🇹🇷 TCKN Kontrol & Tamamlama</h1>
         
-        <label for="tckn-input">TC Kimlik No'nun İlk 9 Hanesini Girin:</label>
+        <label for="tckn-input">TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:</label>
         <input 
             type="text" 
             id="tckn-input" 
-            maxlength="9" 
-            placeholder="Örn: 100000001" 
-            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 9)"
+            maxlength="11" 
+            placeholder="9 hane tamamlama yapar, 11 hane doğrular" 
+            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 11)"
             onkeyup="tamamlayiciyiCalistir()"
         >
         
         <h2>Sonuç:</h2>
-        <div id="sonuc">Lütfen ilk 9 haneyi giriniz...</div>
+        <div id="sonuc">Lütfen TCKN hanelerini giriniz...</div>
     </div>
     
     <script src="script.js"></script>
