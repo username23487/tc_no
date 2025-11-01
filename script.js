@@ -1,6 +1,7 @@
 // =========================================================================
 // == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (GENİŞLETİLMİŞ VERSİYON) ==
 // == AMAÇ: KOD UZUNLUĞUNU ARTIRMAK VE DETAYLI AÇIKLAMA EKLEMEK          ==
+// == GÜNCELLEME: IBAN TAMAMLAMA ÖZELLİĞİ EKLENDİ                          ==
 // =========================================================================
 
 // --- 1. GENEL PROJE YAPILANDIRMASI (CONFIG) ---
@@ -394,32 +395,75 @@ const Algoritma = {
     iban: {
         /**
          * Girilen IBAN'ı Uluslararası MOD 97 algoritması ile kontrol eder.
+         * Artık 24 hane girildiğinde (TR ve kontrol haneleri hariç) tamamlama yapar.
          * @param {string} iban_str - Kullanıcıdan alınan IBAN stringi.
          * @returns {{sonucMetni: string, durum: string}} İşlem sonucu.
          */
         kontrol(iban_str) {
             iban_str = iban_str.toUpperCase().replace(/\s/g, ''); // Boşlukları ve küçük harfleri düzenle
-            if (iban_str.length === 0) return { sonucMetni: '⚠️ IBAN Kontrolü İçin Lütfen karakterleri girmeye başlayınız...', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
-            if (iban_str.length !== 26) return { sonucMetni: `❌ Hata: Türkiye IBAN'ı tam olarak 26 karakter olmalıdır. Girilen: ${iban_str.length}`, durum: CONFIG.UI_DURUMLARI.HATA };
+            const uzunluk = iban_str.length;
+            
+            if (uzunluk === 0) return { sonucMetni: '⚠️ IBAN Kontrolü İçin Lütfen karakterleri girmeye başlayınız.', durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
+            if (uzunluk > 26) return { sonucMetni: '❌ Hata: Türkiye IBAN\'ı 26 karakterden fazla olamaz.', durum: CONFIG.UI_DURUMLARI.HATA };
             if (!iban_str.startsWith('TR')) return { sonucMetni: '❌ Hata: Türkiye IBAN numarası zorunlu olarak "TR" ülke kodu ile başlamalıdır.', durum: CONFIG.UI_DURUMLARI.HATA };
+            if (!/^[0-9A-Z]+$/.test(iban_str)) return { sonucMetni: '❌ Hata: IBAN sadece sayı ve büyük harf içermelidir.', durum: CONFIG.UI_DURUMLARI.HATA };
+
+            // IBAN'ın ilk 4 hanesi (TRKK) tam girilmeden tamamlama yapamayız.
+            if (uzunluk < 4) return { sonucMetni: `⌛ IBAN Tamamlama İçin İlk 4 karakteri (TR ve Kontrol Haneleri) giriniz.`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
             
-            // Kontrol: İlk 4 karakteri sona taşı
-            const duzenlenmis_iban = iban_str.substring(4) + iban_str.substring(0, 4); 
-            // Kontrol: Harfleri sayılara çevir (TR -> 2927)
-            const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
-            
-            // MOD 97 Algoritması ile Kalan Hesaplama
-            let kalan = 0;
-            // Dize çok uzun olduğu için Modulo işlemi parça parça yapılır
-            for (let i = 0; i < sayisal_iban.length; i++) { 
-                kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97; 
+            // Sadece banka kodu, rezerv ve hesap no kısmı (22 hane) girilmişse tamamlama yap.
+            // TR (2) + Hesap Kontrolü (2) + Kalan (22) = 26
+            const gerekli_hane_uzunlugu = 24; 
+
+            // --- IBAN TAMAMLAMA LOGİĞİ (24. Hane Kontrolü) ---
+            if (uzunluk === gerekli_hane_uzunlugu) {
+                // Kontrol haneleri (XX) yerine '00' koyarak MOD 97 hesabına hazırla.
+                const kontrolsuz_iban = iban_str.substring(0, 2) + '00' + iban_str.substring(4);
+                
+                // Kontrol: İlk 4 karakteri sona taşı
+                const duzenlenmis_iban = kontrolsuz_iban.substring(4) + kontrolsuz_iban.substring(0, 4); 
+                // Kontrol: Harfleri sayılara çevir (TR -> 2927)
+                const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
+                
+                // MOD 97 Hesaplaması
+                let kalan = 0;
+                for (let i = 0; i < sayisal_iban.length; i++) { 
+                    kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97; 
+                }
+                
+                // Kontrol basamağı: 98 - kalan
+                let kontrol_basamagi = 98 - kalan;
+                let kontrol_str = kontrol_basamagi.toString().padStart(2, '0'); // 2 haneli olmalı
+                
+                const tamamlanmis_iban = iban_str.substring(0, 2) + kontrol_str + iban_str.substring(4);
+                
+                return { sonucMetni: `➡️ **TAMAMLANMIŞ IBAN:** <span style="color: var(--primary-color); font-weight: bold;">${tamamlanmis_iban}</span> (Hesaplanan Kontrol Haneleri: ${kontrol_str})`, durum: CONFIG.UI_DURUMLARI.BASARI };
             }
 
-            if (kalan === 1) { 
-                return { sonucMetni: '✅ IBAN, Uluslararası MOD 97 Kontrolünden **BAŞARIYLA GEÇTİ!** (Kalan 1)', durum: CONFIG.UI_DURUMLARI.BASARI }; 
-            } else { 
-                return { sonucMetni: `❌ IBAN, MOD 97 Kontrolünde BAŞARISIZ. (Kalan ${kalan}, 1 olmalıydı.)`, durum: CONFIG.UI_DURUMLARI.HATA }; 
+            // --- TAM IBAN DOĞRULAMA LOGİĞİ (26 HANE KONTROLÜ) ---
+            if (uzunluk === 26) {
+                // Kontrol: İlk 4 karakteri sona taşı
+                const duzenlenmis_iban = iban_str.substring(4) + iban_str.substring(0, 4); 
+                // Kontrol: Harfleri sayılara çevir
+                const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
+                
+                // MOD 97 Algoritması ile Kalan Hesaplama
+                let kalan = 0;
+                for (let i = 0; i < sayisal_iban.length; i++) { 
+                    kalan = (kalan * 10 + parseInt(sayisal_iban[i], 10)) % 97; 
+                }
+
+                if (kalan === 1) { 
+                    return { sonucMetni: '✅ IBAN, Uluslararası MOD 97 Kontrolünden **BAŞARIYLA GEÇTİ!** (Kalan 1)', durum: CONFIG.UI_DURUMLARI.BASARI }; 
+                } else { 
+                    const hesaplanan_kontrol = (98 - kalan).toString().padStart(2, '0');
+                    return { sonucMetni: `❌ IBAN, MOD 97 Kontrolünde BAŞARISIZ. (Kalan ${kalan}, 1 olmalıydı.) **Doğru Kontrol Haneleri:** ${hesaplanan_kontrol}`, durum: CONFIG.UI_DURUMLARI.HATA }; 
+                }
             }
+
+            // Eksik hane mesajı
+            const eksikHane = 26 - uzunluk;
+            return { sonucMetni: `⌛ IBAN'ı kontrol etmek veya tamamlamak için **${eksikHane} hane** daha girmelisiniz. (Toplam 26 hane)`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
         },
 
         /**
@@ -827,7 +871,7 @@ function resetAndChangeProject() {
     let labelText = "Lütfen bir proje seçimi yapın:";
     let placeholderText = "";
     let maxLength = 50;
-    let onInputFunc = null;
+    let onInputFunc = calistirici; // Varsayılan olarak her girişte kontrol et
 
     // c) Seçime göre ilgili ayarları yapılandır
     if (secim === 'vkn') {
@@ -866,7 +910,7 @@ function resetAndChangeProject() {
     } else if (secim === 'iban') {
         document.getElementById('iban-uretim-grup').style.display = 'flex'; 
         labelText = "IBAN'ı Girin (TR ile başlayan 26 karakter):";
-        placeholderText = "Örnek: TRKKBBBBBRRRRCCCCCCCCCCCCCCCC (Harf ve Rakam)";
+        placeholderText = "24 hane (TR + 22 karakter) tamamlama yapar. (Harf ve Rakam)";
         maxLength = 26;
         onInputFunc = function() { 
             this.value = this.value.toUpperCase().replace(/[^0-9A-Z]/g, ''); 
@@ -878,22 +922,17 @@ function resetAndChangeProject() {
         labelText = "Telefon Numarasını Girin (Örn: 5XX XXX XX XX - 10 Hane Kontrolü):";
         placeholderText = "Tüm formatlar desteklenir (05XX, +905XX vb.)";
         maxLength = 20; 
-        onInputFunc = function() { 
-            // Boşluklar, tireler vb. silinmez, temizleme fonksiyonda yapılır
-            calistirici(); 
-        }; 
+        onInputFunc = calistirici; 
     } else if (secim === 'eposta') {
         document.getElementById('eposta-uretim-grup').style.display = 'flex';
         labelText = "E-Posta Adresini Girin (Sözdizimi Kontrolü):";
         placeholderText = "ornek.kullanici@alanadi.com";
         maxLength = 100;
-        onInputFunc = calistirici;
     } else if (secim === 'sifre') {
         document.getElementById('sifre-uretim-grup').style.display = 'flex';
         labelText = "Şifrenizi Girin (Güç Kontrolü):";
         placeholderText = "Güçlü şifre kurallarını karşılayınız.";
         maxLength = 50;
-        onInputFunc = calistirici;
         inputAlan.type = 'password'; // Şifre girişi için
     }
     
@@ -911,3 +950,20 @@ function resetAndChangeProject() {
 // --- 7. BAŞLANGIÇ OLAY DİNLEYİCİSİ ---
 // DOM yüklendiğinde arayüzü hazırlar.
 document.addEventListener('DOMContentLoaded', resetAndChangeProject);
+
+
+// =========================================================================
+// == GİT VERSİYON KONTROL KOMUTLARI (Lütfen Unutmayınız!)               ==
+// =========================================================================
+/*
+    Yeni IBAN tamamlama özelliğini ve bu uzun kodu kaydetmek için terminalinizde bu komutları kullanın:
+
+    1. Değişiklikleri Git'e Ekle (Staging):
+       git add script.js
+       
+    2. Değişiklikleri Kaydet (Commit):
+       git commit -m "feat: IBAN tamamlama özelligi eklendi ve script.js güncellendi"
+       
+    3. Uzak sunucuya gönderme (Opsiyonel):
+       git push origin <dal_adi>
+*/
