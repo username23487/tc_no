@@ -13,6 +13,7 @@
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             --error-color: #dc3545;
             --success-color: #28a745;
+            --warn-color: #ffc107; /* Zayıf/Orta için sarı */
         }
         
         body {
@@ -117,6 +118,10 @@
         input[type="text"].success-border {
             border-color: var(--success-color) !important;
         }
+        
+        input[type="text"].warn-border {
+            border-color: var(--warn-color) !important;
+        }
 
         #sonuc {
             margin-top: 25px;
@@ -143,6 +148,12 @@
             color: var(--success-color);
         }
         
+        #sonuc.warn-box {
+            border-color: var(--warn-color);
+            background-color: #fff3cd;
+            color: var(--warn-color);
+        }
+        
     </style>
 </head>
 <body>
@@ -158,6 +169,7 @@
                 <option value="iban">🏦 IBAN Kontrol (Mod 97)</option>
                 <option value="telefon">📱 Telefon Numarası Kontrol & Üretim</option>
                 <option value="eposta">📧 E-Posta Sözdizimi Kontrolü (Regex)</option>
+                <option value="sifre">🔑 Şifre Gücü Kontrol & Üretim (GÜNCEL)</option>
             </select>
         </div>
 
@@ -177,6 +189,12 @@
         
         <div id="eposta-uretim-grup" class="select-group" style="display:none;">
             <button class="action-button" onclick="epostaUret()">📧 Rastgele Geçerli E-Posta Üret</button>
+        </div>
+        
+        <div id="sifre-uretim-grup" class="select-group" style="display:none;">
+            <label for="sifre-uzunluk">Üretilecek Şifre Uzunluğu:</label>
+            <input type="number" id="sifre-uzunluk" min="8" max="30" value="12" style="text-align: left; margin-bottom: 10px; width: 50%;">
+            <button class="action-button" onclick="sifreUret()">🔑 Rastgele Güçlü Şifre Üret</button>
         </div>
         
         <div id="kart-uretim-grup" class="select-group" style="display:none;">

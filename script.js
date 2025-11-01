@@ -67,45 +67,156 @@ function convertLettersToNumbers(str) {
     }).join('');
 }
 
-// --- MODÜL 1: TCKN ÜRETİM VE KONTROL ---
+// --- MODÜL 6: ŞİFRE GÜCÜ KONTROL VE ÜRETİM ---
 
-function tcknUret() {
-    const inputAlan = document.getElementById('input-alan');
-    const sonucElement = document.getElementById('sonuc');
-    
-    // 1. İlk 9 haneyi rastgele oluştur (İlk hane 0 olamaz!)
-    const ilk_9_hane = rastgeleSayiUret(1, true) + rastgeleSayiUret(8);
-    const rakamlar = ilk_9_hane.split('').map(Number);
-    
-    let tek_haneler_toplami = 0; 
-    let cift_haneler_toplami = 0; 
+const SIFRE_KARAKTER_SETLERI = {
+    buyukHarf: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    kucukHarf: 'abcdefghijklmnopqrstuvwxyz',
+    rakam: '0123456789',
+    ozelKarakter: '!@#$%^&*()_+~`|}{[]\:;?><,./-='
+};
 
-    for (let i = 0; i < 9; i++) {
-        if ((i + 1) % 2 === 1) { 
-            tek_haneler_toplami += rakamlar[i];
-        } else {
-            cift_haneler_toplami += rakamlar[i];
-        }
+/**
+ * Şifre gücü analizi yapar ve puanlar.
+ */
+function sifreAlgoritmaKontrolu(sifre) {
+    if (sifre.length === 0) {
+        return { sonucMetni: 'Lütfen kontrol etmek için bir şifre giriniz.', hataMi: false, durum: 'default' };
     }
     
-    // 2. 10. haneyi (kontrol basamağı) hesapla: ((t1+t3+t5+t7+t9)*7 - (t2+t4+t6+t8)) mod 10
+    let puan = 0;
+    let eksik_kosullar = [];
+
+    // 1. Uzunluk Kontrolü (Minimum 8 karakter)
+    if (sifre.length >= 8) {
+        puan += 1;
+    } else {
+        eksik_kosullar.push('Minimum 8 karakter uzunluğunda olmalıdır.');
+    }
+    
+    // 2. Büyük Harf Kontrolü
+    if (/[A-Z]/.test(sifre)) {
+        puan += 1;
+    } else {
+        eksik_kosullar.push('En az bir büyük harf (A-Z) içermelidir.');
+    }
+
+    // 3. Küçük Harf Kontrolü
+    if (/[a-z]/.test(sifre)) {
+        puan += 1;
+    } else {
+        eksik_kosullar.push('En az bir küçük harf (a-z) içermelidir.');
+    }
+
+    // 4. Rakam Kontrolü
+    if (/[0-9]/.test(sifre)) {
+        puan += 1;
+    } else {
+        eksik_kosullar.push('En az bir rakam (0-9) içermelidir.');
+    }
+    
+    // 5. Özel Karakter Kontrolü
+    const ozelKarakterRegex = new RegExp(`[${SIFRE_KARAKTER_SETLERI.ozelKarakter.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}]`);
+    if (ozelKarakterRegex.test(sifre)) {
+        puan += 1;
+    } else {
+        eksik_kosullar.push('En az bir özel karakter (!, @, #, $ vb.) içermelidir.');
+    }
+
+    // PUANLAMAYA GÖRE SONUÇ
+    let durum = 'warn';
+    let sonucMetni = '';
+
+    if (puan === 5 && sifre.length >= 12) {
+        durum = 'success';
+        sonucMetni = `💪 **ÇOK GÜÇLÜ ŞİFRE!** Tüm 5 koşulu başarıyla geçti. (Puan: 5/5)`;
+    } else if (puan >= 4) {
+        durum = 'success';
+        sonucMetni = `✅ **GÜÇLÜ ŞİFRE.** Neredeyse tüm koşullar sağlandı. (Puan: ${puan}/5)`;
+    } else if (puan >= 3) {
+        durum = 'warn';
+        sonucMetni = `⚠️ **ORTA DÜZEY ŞİFRE.** Daha güvenli olabilir. (Puan: ${puan}/5)<br><span style="font-size: 0.8em; font-weight: normal;">Eksikler: ${eksik_kosullar.join(' ')}</span>`;
+    } else {
+        durum = 'error';
+        sonucMetni = `❌ **ZAYIF/ÇOK ZAYIF ŞİFRE.** Lütfen geliştirin. (Puan: ${puan}/5)<br><span style="font-size: 0.8em; font-weight: normal;">Eksikler: ${eksik_kosullar.join(' ')}</span>`;
+    }
+
+    return {
+        sonucMetni: sonucMetni,
+        hataMi: durum === 'error',
+        durum: durum
+    };
+}
+
+/**
+ * Belirtilen uzunlukta tüm karakter setlerini içeren rastgele bir şifre üretir.
+ */
+function sifreUret() {
+    const inputAlan = document.getElementById('input-alan');
+    const sonucElement = document.getElementById('sonuc');
+    const uzunlukElement = document.getElementById('sifre-uzunluk');
+    const uzunluk = parseInt(uzunlukElement.value) || 12; // Varsayılan 12
+    
+    if (uzunluk < 8 || uzunluk > 30) {
+        sonucElement.innerHTML = 'Hata: Şifre uzunluğu 8 ile 30 arasında olmalıdır.';
+        sonucElement.classList.add('error-box');
+        return;
+    }
+    
+    const setler = SIFRE_KARAKTER_SETLERI;
+    const tumKarakterler = setler.buyukHarf + setler.kucukHarf + setler.rakam + setler.ozelKarakter;
+    let sifre = '';
+    
+    // Güçlü olması için her setten en az bir karakter ekle
+    sifre += setler.buyukHarf.charAt(Math.floor(Math.random() * setler.buyukHarf.length));
+    sifre += setler.kucukHarf.charAt(Math.floor(Math.random() * setler.kucukHarf.length));
+    sifre += setler.rakam.charAt(Math.floor(Math.random() * setler.rakam.length));
+    sifre += setler.ozelKarakter.charAt(Math.floor(Math.random() * setler.ozelKarakter.length));
+    
+    // Kalan uzunluğu rastgele doldur
+    for (let i = sifre.length; i < uzunluk; i++) {
+        sifre += tumKarakterler.charAt(Math.floor(Math.random() * tumKarakterler.length));
+    }
+    
+    // Şifreyi karıştır (Daha az tahmin edilebilir olması için)
+    sifre = sifre.split('').sort(() => 0.5 - Math.random()).join('');
+
+    inputAlan.value = sifre;
+    
+    // Üretilen şifrenin gücünü kontrol et ve sonucu göster
+    const kontrolSonucu = sifreAlgoritmaKontrolu(sifre);
+    sonucElement.innerHTML = `🔑 **${uzunluk} Karakterli Şifre Üretildi.** ${kontrolSonucu.sonucMetni}`;
+    sonucElement.className = '';
+    sonucElement.classList.add(kontrolSonucu.durum + '-box');
+    inputAlan.classList.add(kontrolSonucu.durum + '-border');
+}
+
+
+// --- MODÜL 1: TCKN ÜRETİM VE KONTROL ---
+
+function tcknUret() { /* TCKN üretme mantığı */
+    const inputAlan = document.getElementById('input-alan');
+    const sonucElement = document.getElementById('sonuc');
+    const ilk_9_hane = rastgeleSayiUret(1, true) + rastgeleSayiUret(8);
+    const rakamlar = ilk_9_hane.split('').map(Number);
+    let tek_haneler_toplami = 0; let cift_haneler_toplami = 0;
+    for (let i = 0; i < 9; i++) {
+        if ((i + 1) % 2 === 1) tek_haneler_toplami += rakamlar[i];
+        else cift_haneler_toplami += rakamlar[i];
+    }
     const kontrol_farki = (tek_haneler_toplami * 7) - cift_haneler_toplami;
     const algoritma_10_hane = (kontrol_farki % 10 + 10) % 10;
-    
-    // 3. 11. haneyi (kontrol basamağı) hesapla: (t1...t10) mod 10
     const ilk_10_toplami = rakamlar.reduce((toplam, mevcut) => toplam + mevcut, 0) + algoritma_10_hane;
     const algoritma_11_hane = ilk_10_toplami % 10;
-
     const uretilen_tckn = ilk_9_hane + String(algoritma_10_hane) + String(algoritma_11_hane);
-
     inputAlan.value = uretilen_tckn;
     sonucElement.innerHTML = `🇹🇷 **GEÇERLİ TCKN ÜRETİLDİ.** Doğrulama başarılı!`;
+    sonucElement.className = '';
     sonucElement.classList.add('success-box');
     inputAlan.classList.add('success-border');
 }
 
 function tcknAlgoritmaKontrolu(tckn_str) {
-    
     const tckn_uzunluk = tckn_str.length;
     const varsayilan_yanit = { sonucMetni: 'Lütfen TCKN hanelerini giriniz...', hataMi: false, durum: 'default' };
 
@@ -206,6 +317,7 @@ function kartUret() {
         hedef_uzunluk = 15;
     } else {
         sonucElement.innerHTML = 'Hata: Geçerli bir kart türü seçiniz.';
+        sonucElement.className = '';
         sonucElement.classList.add('error-box');
         return;
     }
@@ -218,6 +330,7 @@ function kartUret() {
 
     inputAlan.value = uretilen_kart_no;
     sonucElement.innerHTML = `✅ ${kartMarkasiBelirle(uretilen_kart_no)} için **${hedef_uzunluk}** haneli kart üretildi. (Doğrulama başarılı!)`;
+    sonucElement.className = '';
     sonucElement.classList.add('success-box');
     inputAlan.classList.add('success-border');
 }
@@ -321,6 +434,7 @@ function ibanUret() {
     
     inputAlan.value = uretilen_iban;
     sonucElement.innerHTML = `🏦 **GEÇERLİ IBAN ÜRETİLDİ.** Kontrol: ${kontrol_str}. Doğrulama başarılı!`;
+    sonucElement.className = '';
     sonucElement.classList.add('success-box');
     inputAlan.classList.add('success-border');
 }
@@ -366,19 +480,13 @@ const OPERATOR_KODLARI = {
 };
 
 function numarayiTemizle(numara_str) {
-    // 1. Sayısal olmayan karakterleri kaldır
     let temiz_numara = numara_str.replace(/[^0-9]/g, '');
-    
-    // 2. Başlangıçtaki ülke kodunu (90) kaldır
     if (temiz_numara.startsWith('90')) {
         temiz_numara = temiz_numara.substring(2);
     }
-    
-    // 3. Başlangıçtaki 0'ı kaldır (05XX formatından 5XX'e dönüştürmek için)
     if (temiz_numara.startsWith('0')) {
         temiz_numara = temiz_numara.substring(1);
     }
-    
     return temiz_numara;
 }
 
@@ -400,24 +508,21 @@ function telefonUret() {
     const kodListesi = OPERATOR_KODLARI[operatorSecim];
     if (!kodListesi || kodListesi.length === 0) {
         sonucElement.innerHTML = 'Hata: Geçerli bir operatör seçimi yapılmadı.';
+        sonucElement.className = '';
         sonucElement.classList.add('error-box');
         return;
     }
 
-    // 1. Rastgele Alan Kodu Seç
     const rastgeleKod = kodListesi[Math.floor(Math.random() * kodListesi.length)];
-    
-    // 2. Rastgele Son 7 Haneyi Oluştur
     const son_7_hane = rastgeleSayiUret(7);
-    
     const uretilen_numara = String(rastgeleKod) + son_7_hane;
     const operatorAdi = operatorSecim.charAt(0).toUpperCase() + operatorSecim.slice(1);
 
-    // 5XX XXX XX XX formatında gösterelim
     const formatli_numara = uretilen_numara.substring(0, 3) + ' ' + uretilen_numara.substring(3, 6) + ' ' + uretilen_numara.substring(6, 8) + ' ' + uretilen_numara.substring(8, 10);
 
     inputAlan.value = formatli_numara; 
     sonucElement.innerHTML = `📱 **GEÇERLİ NUMARA ÜRETİLDİ.** Operatör: **${operatorAdi}**. Doğrulama başarılı!`;
+    sonucElement.className = '';
     sonucElement.classList.add('success-box');
     inputAlan.classList.add('success-border');
 }
@@ -451,16 +556,13 @@ function telefonAlgoritmaKontrolu(numara_str) {
         sonucMetni = `❌ Alan Kodu **${alan_kodu}** Geçersiz veya Bilinmeyen Operatör Kodu. Temiz Format: ${formatli_temiz_numara}`;
         return { sonucMetni, hataMi: true, durum: 'error' };
     } else {
-        sonucMetni = `✔ Numara Geçerli. **Operatör:** ${operator}. Uluslararası Format: +90 ${formatli_temiz_numara}`;
+        sonucMetri = `✔ Numara Geçerli. **Operatör:** ${operator}. Uluslararası Format: +90 ${formatli_temiz_numara}`;
         return { sonucMetni, hataMi: false, durum: 'success' };
     }
 }
 
 // --- MODÜL 5: E-POSTA KONTROL VE ÜRETİM (REGEX) ---
 
-/**
- * E-posta sözdizimi kontrolü için basit ama etkili Regex deseni.
- */
 const EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 function epostaAlgoritmaKontrolu(eposta_str) {
@@ -468,7 +570,6 @@ function epostaAlgoritmaKontrolu(eposta_str) {
         return { sonucMetni: 'Lütfen kontrol etmek için bir e-posta adresi giriniz.', hataMi: false, durum: 'default' };
     }
     
-    // Test metodu ile kontrol
     const dogrulama_basarili = EMAIL_REGEX.test(eposta_str.toLowerCase());
 
     if (dogrulama_basarili) {
@@ -492,14 +593,14 @@ function epostaUret() {
     
     const popüler_alanlar = ['gmail.com', 'hotmail.com', 'yandex.com', 'yahoo.com', 'outlook.com', 'mail.com'];
     
-    const kullanici_adi = rastgeleKarakterUret(Math.floor(Math.random() * 5) + 5); // 5-9 arası karakter
+    const kullanici_adi = rastgeleKarakterUret(Math.floor(Math.random() * 5) + 5); 
     const alan_adi = popüler_alanlar[Math.floor(Math.random() * popüler_alanlar.length)];
     
     const uretilen_eposta = `${kullanici_adi}${rastgeleSayiUret(2)}@${alan_adi}`;
 
-    // Arayüze yaz
     inputAlan.value = uretilen_eposta;
     sonucElement.innerHTML = `📧 **GEÇERLİ E-POSTA ÜRETİLDİ.** Sözdizimi doğru!`;
+    sonucElement.className = '';
     sonucElement.classList.add('success-box');
     inputAlan.classList.add('success-border');
 }
@@ -526,11 +627,13 @@ function resetAndChangeProject() {
     document.getElementById('kart-uzunluk-secim-grup').style.display = 'none';
     document.getElementById('telefon-uretim-grup').style.display = 'none'; 
     document.getElementById('eposta-uretim-grup').style.display = 'none';
+    document.getElementById('sifre-uretim-grup').style.display = 'none'; // Şifre grubu
 
     inputAlan.value = '';
     inputAlan.oninput = null; 
     inputAlan.maxLength = 50; 
-    inputAlan.type = 'text'; // Tipi sıfırla
+    inputAlan.type = 'text'; 
+    inputAlan.classList.remove('error-border', 'success-border', 'warn-border'); // Yeni uyarı stilini sıfırla
 
     if (secim === 'tckn') {
         document.getElementById('tckn-uretim-grup').style.display = 'block';
@@ -564,7 +667,13 @@ function resetAndChangeProject() {
         inputLabel.innerHTML = "E-Posta Adresini Girin (Sözdizimi Kontrolü):";
         inputAlan.placeholder = "ornek.kullanici@domain.com";
         inputAlan.maxLength = 100;
-        inputAlan.oninput = null; // Tüm karakter girişine izin ver
+        inputAlan.oninput = null;
+    } else if (secim === 'sifre') {
+        document.getElementById('sifre-uretim-grup').style.display = 'block';
+        inputLabel.innerHTML = "Şifrenizi Girin (Güç Kontrolü):";
+        inputAlan.placeholder = "Güçlü şifre en az 8 karakter, büyük/küçük harf, rakam ve özel karakter içermelidir.";
+        inputAlan.maxLength = 50;
+        inputAlan.oninput = null;
     }
     
     calistirici(); 
@@ -579,7 +688,8 @@ function calistirici() {
     const input_degeri = inputElement.value.trim();
     let sonuc;
 
-    inputElement.classList.remove('error-border', 'success-border');
+    inputElement.classList.remove('error-border', 'success-border', 'warn-border');
+    sonucElement.className = '';
     
     if (secim === 'tckn') {
         sonuc = tcknAlgoritmaKontrolu(input_degeri);
@@ -590,14 +700,14 @@ function calistirici() {
     } else if (secim === 'telefon') {
         sonuc = telefonAlgoritmaKontrolu(input_degeri);
     } else if (secim === 'eposta') {
-        // E-Posta kontrolü artık ana akışın bir parçası
         sonuc = epostaAlgoritmaKontrolu(input_degeri);
+    } else if (secim === 'sifre') { // YENİ ŞİFRE KONTROLÜ
+        sonuc = sifreAlgoritmaKontrolu(input_degeri);
     } else {
         sonuc = { sonucMetni: 'Lütfen bir proje seçin.', hataMi: false, durum: 'default' };
     }
 
     sonucElement.innerHTML = sonuc.sonucMetni;
-    sonucElement.classList.remove('error-box', 'success-box');
 
     if (sonuc.durum === 'error') {
         sonucElement.classList.add('error-box');
@@ -605,6 +715,9 @@ function calistirici() {
     } else if (sonuc.durum === 'success') {
         sonucElement.classList.add('success-box');
         inputElement.classList.add('success-border');
+    } else if (sonuc.durum === 'warn') {
+        sonucElement.classList.add('warn-box');
+        inputElement.classList.add('warn-border');
     }
 }
 
