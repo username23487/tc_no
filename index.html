@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EggApps TCKN Tamamlayıcı & Doğrulayıcı</title>
+    <title>EggApps Algoritma Kontrol Merkezi</title>
     <style>
+        /* ... Önceki CSS kodları burada devam ediyor ... */
         :root {
             --primary-color: #ff9900;
             --background-color: #f4f7f6;
@@ -51,6 +52,22 @@
             color: var(--primary-color);
             font-size: 1.2em;
             letter-spacing: 1px;
+        }
+        
+        /* Yeni Select (Seçim Kutusu) Stilleri */
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            appearance: none; /* Varsayılan stil okunu kaldır */
+            background-color: #fff;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23333333" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 16px;
         }
 
         label {
@@ -110,20 +127,26 @@
 <body>
     <div class="container"> 
         <span class="eggapps">EggApps</span>
-        <h1>🇹🇷 TCKN Kontrol & Tamamlama</h1>
+        <h1>🧮 Algoritma Kontrol Merkezi</h1>
         
-        <label for="tckn-input">TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:</label>
+        <label for="proje-secim">Proje Seçiniz:</label>
+        <select id="proje-secim" onchange="resetAndChangeProject()">
+            <option value="tckn">🇹🇷 TCKN Kontrol & Tamamlama</option>
+            <option value="kredi_karti">💳 Kredi Kartı Doğrulama</option>
+        </select>
+        
+        <label id="input-label" for="tckn-input">TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:</label>
         <input 
             type="text" 
-            id="tckn-input" 
+            id="input-alan" 
             maxlength="11" 
             placeholder="9 hane tamamlama yapar, 11 hane doğrular" 
-            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 11)"
-            onkeyup="tamamlayiciyiCalistir()"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+            onkeyup="calistirici()"
         >
         
         <h2>Sonuç:</h2>
-        <div id="sonuc">Lütfen TCKN hanelerini giriniz...</div>
+        <div id="sonuc">Lütfen bir proje seçin ve haneleri giriniz...</div>
     </div>
     
     <script src="script.js"></script>

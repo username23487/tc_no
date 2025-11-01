@@ -1,14 +1,8 @@
-# 🥚 EggApps T.C. Kimlik No Tamamlayıcı ve Denetleyici
+# 🥚 EggApps Algoritma Kontrol Merkezi
 
 ## 🇹🇷 Proje Hakkında
 
-Bu proje, T.C. Kimlik Numarası (TCKN) doğrulama algoritmasına dayalı olarak çalışır. Uygulama, girdi uzunluğuna göre iki temel görevi yerine getirir:
-1. **TCKN Tamamlama (9 Hane Girişi):** İlk 9 hane girildiğinde, 10. ve 11. kontrol basamaklarını hesaplayarak geçerli bir TCKN formatı oluşturur.
-2. **TCKN Doğrulama (11 Hane Girişi):** 11 hanenin tamamı girildiğinde, TCKN'nin algoritmik olarak doğru olup olmadığını kontrol eder.
-
-Proje, **JavaScript** kullanarak tamamen statik bir web uygulaması olarak **GitHub Pages** üzerinde çalışmak üzere tasarlanmıştır.
-
-**Önemli Not:** Bu uygulama tarafından üretilen TCKN'ler yalnızca **algoritmik olarak geçerlidir** ve **gerçek bir kişiye ait değildir**.
+Bu proje, farklı algoritmik yapıları (TCKN, Kredi Kartı vb.) tek bir arayüzde kontrol etmeye yarayan dinamik bir uygulamadır. Uygulama, girdi uzunluğuna ve seçime göre ilgili algoritmayı (Luhn Algoritması veya TCKN Algoritması) **JavaScript** ile anlık olarak çalıştırır.
 
 ### 🌐 Canlı Uygulama ve Kullanım
 
@@ -18,13 +12,16 @@ Uygulama anlık geri bildirim ile çalışır ve butona basma gerektirmez.
 
 ---
 
-## 🛠️ Teknik Detaylar (Algoritma Özeti)
+## 🛠️ Desteklenen Algoritmalar
 
-Uygulama, TCKN'nin son iki hanesini resmi algoritma kurallarına göre hesaplar:
+### 1. 🇹🇷 TCKN Kontrol & Tamamlama
+* **Girdi:** İlk 9 hane (Tamamlama) veya 11 hane (Doğrulama).
+* **Algoritma:** T.C. Kimlik No resmi kontrol hanesi hesaplama kuralları.
 
-1.  **İlk Hane Kontrolü:** İlk hane '0' olamaz.
-2.  **10. Hane:** $\left( \sum_{tek} (Hane_n) \times 7 - \sum_{çift} (Hane_n) \right) \bmod 10$
-3.  **11. Hane:** $\left( \sum_{n=1}^{10} (Hane_n) \right) \bmod 10$
+### 2. 💳 Kredi Kartı Doğrulama
+* **Girdi:** 13 ile 19 haneli kart numarası.
+* **Algoritma:** Kontrol basamağı sistemi olan **Luhn Algoritması (Mod 10)** ile kartın formatı doğrulanır.
+* *(Not: Bu doğrulama, kartın gerçek, aktif ve geçerli olduğu anlamına gelmez, sadece matematiksel yapısını kontrol eder.)*
 
 ---
 
@@ -32,13 +29,13 @@ Uygulama, TCKN'nin son iki hanesini resmi algoritma kurallarına göre hesaplar:
 
 | Dosya Adı | Amaç |
 | :--- | :--- |
-| `index.html` | Uygulamanın modern ve stilize edilmiş arayüzünü (HTML/CSS) sağlar. |
-| `script.js` | TCKN hesaplama, tamamlama ve doğrulama mantığını (JavaScript) içerir. |
+| `index.html` | Proje seçimi ve dinamik arayüzü (HTML/CSS) sağlar. |
+| `script.js` | TCKN ve Luhn Algoritmalarını içeren ana mantık ve yönlendirici fonksiyonları içerir. |
 | `README.md` | Proje açıklaması ve kullanım kılavuzu. |
 
-### Kurulum (Yerel)
-1.  Depoyu klonlayın:
-    ```bash
-    git clone [https://github.com/username23487/tc_no.git](https://github.com/username23487/tc_no.git)
-    ```
-2.  `index.html` dosyasını herhangi bir web tarayıcısında açın. Uygulama anında çalışmaya başlayacaktır.
+### Kurulum ve Güncelleme
+Bu dosyaları deponuzun ana dizinine yükledikten sonra, Git komutlarını tekrar çalıştırın:
+```bash
+git add .
+git commit -m "feat: Proje secimi ve Kredi Karti Luhn algoritmasi eklendi"
+git push
