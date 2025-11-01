@@ -1,7 +1,6 @@
 // =========================================================================
-// == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (GENİŞLETİLMİŞ VERSİYON) ==
-// == AMAÇ: KOD UZUNLUĞUNU ARTIRMAK VE DETAYLI AÇIKLAMA EKLEMEK          ==
-// == GÜNCELLEME: IBAN TAMAMLAMA ÖZELLİĞİ EKLENDİ, VKN DÜZELTİLDİ          ==
+// == PROJE: ALGORİTMA DOĞRULAMA VE ÜRETİM ARACI (GÜNCELLENMİŞ SON VERSİYON)
+// == GİDERİLEN HATA: IBAN Üretimi 26 Hane Yerine 24 Hane Üretiyordu.
 // =========================================================================
 
 // --- 1. GENEL PROJE YAPILANDIRMASI (CONFIG) ---
@@ -43,7 +42,7 @@ function rastgeleSayiUret(uzunluk, ilkHaneSifirOlamaz = false) {
     let numara = '';
     for (let i = 0; i < uzunluk; i++) {
         let rakam = Math.floor(Math.random() * 10);
-        if (i === 0 && ilkHaneSifirOlamaz) {
+        if (i === 0 && ilkHaneSifirOlamaz && uzunluk > 1) { // 1 haneli kontrolü de ekledik
             rakam = Math.floor(Math.random() * 9) + 1; 
         }
         numara += rakam;
@@ -295,10 +294,10 @@ const Algoritma = {
 
             if (uzunluk < 4) return { sonucMetni: `⌛ IBAN Tamamlama İçin İlk 4 karakteri (TR ve Kontrol Haneleri) giriniz.`, durum: CONFIG.UI_DURUMLARI.VARSAYILAN };
             
-            const gerekli_hane_uzunlugu = 24; 
+            const gerekli_bb_uzunlugu = 22; // BBAN (Banka Hesap Numarası) kısmı uzunluğu. Toplam 26 hane için 22 hane + TR (2) + Kontrol (2)
 
             // --- IBAN TAMAMLAMA LOGİĞİ (24. Hane Kontrolü) ---
-            if (uzunluk === gerekli_hane_uzunlugu) {
+            if (uzunluk === gerekli_bb_uzunlugu + 2) { // 24 karakter (TR + 00 + BBAN) girilince çalışır
                 const kontrolsuz_iban = iban_str.substring(0, 2) + '00' + iban_str.substring(4);
                 const duzenlenmis_iban = kontrolsuz_iban.substring(4) + kontrolsuz_iban.substring(0, 4); 
                 const sayisal_iban = convertLettersToNumbers(duzenlenmis_iban);
@@ -342,7 +341,11 @@ const Algoritma = {
             const ulke_kodu = 'TR'; 
             const banka_kodu = rastgeleSayiUret(5); 
             const rezerv_alan = '0'; 
-            const hesap_numarasi = rastgeleSayiUret(16); 
+            
+            // HATA DÜZELTİLDİ: Hesap numarasının ilk 2 hanesini rastgele üreterek,
+            // 5 (Banka Kodu) + 1 (Rezerv) + 16 (Hesap No) = 22 hane BBAN'ı garanti ediyoruz.
+            const hesap_no_ilk_2 = rastgeleSayiUret(2); // YAPI: TRKKBBBBBRRRRRRRRRRRRRRRR
+            const hesap_numarasi = hesap_no_ilk_2 + rastgeleSayiUret(14); // Toplam 16 hane
             
             let hesaplama_parcasi = banka_kodu + rezerv_alan + hesap_numarasi + ulke_kodu + '00';
             const sayisal_iban = convertLettersToNumbers(hesaplama_parcasi);
@@ -355,7 +358,14 @@ const Algoritma = {
             let kontrol_basamagi = 98 - kalan;
             let kontrol_str = kontrol_basamagi.toString().padStart(2, '0'); 
             
-            return ulke_kodu + kontrol_str + banka_kodu + rezerv_alan + hesap_numarasi;
+            // Üretilen IBAN'ın 26 karakter olduğunu kontrol et
+            const tam_iban = ulke_kodu + kontrol_str + banka_kodu + rezerv_alan + hesap_numarasi;
+            if (tam_iban.length !== 26) {
+                 console.error("HATA: Üretilen IBAN 26 hane değil!");
+                 return "IBAN Üretim Hatası (Uzunluk)";
+            }
+
+            return tam_iban;
         }
     },
     
@@ -530,10 +540,10 @@ function calistirici() {
 
     // *** KRİTİK NOKTA: switch (secim) ve case değerlerinin HTML value ile eşleşmesi ***
     switch (secim) {
-        case 'vkn': // HTML'deki value="vkn" ile eşleşmeli
+        case 'vkn': 
             sonuc = Algoritma.vkn.kontrol(input_degeri); 
             break;
-        case 'tckn': // HTML'deki value="tckn" ile eşleşmeli
+        case 'tckn': 
             sonuc = Algoritma.tckn.kontrol(input_degeri); 
             break;
         case 'kredi_karti': 
