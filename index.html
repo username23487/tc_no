@@ -6,11 +6,12 @@
     <title>EggApps TCKN Tamamlayıcı</title>
     <style>
         :root {
-            --primary-color: #ff9900; /* EggApps Rengi */
+            --primary-color: #ff9900;
             --background-color: #f4f7f6;
             --card-background: #ffffff;
             --text-color: #333;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            --error-color: #dc3545; /* Hata rengi */
         }
         
         body {
@@ -67,23 +68,12 @@
             box-sizing: content-box;
             font-size: 1.1em;
             text-align: center;
-        }
-        
-        button {
-            width: 100%;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px 15px;
-            border: none;
-            cursor: pointer;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
+            transition: border-color 0.3s;
         }
 
-        button:hover {
-            background-color: #e58800;
+        /* Hata durumunda input'u renklendir */
+        input[type="text"].error-border {
+            border-color: var(--error-color);
         }
 
         #sonuc {
@@ -96,7 +86,16 @@
             font-weight: bold;
             font-size: 1.2em;
             text-align: center;
+            transition: all 0.3s;
         }
+
+        /* Hata durumunda sonuç kutusunu renklendir */
+        #sonuc.error-box {
+            border-color: var(--error-color);
+            background-color: #f8d7da; /* Açık kırmızı arka plan */
+            color: var(--error-color);
+        }
+        
     </style>
 </head>
 <body>
@@ -105,9 +104,14 @@
         <h1>🇹🇷 TCKN Kontrol Basamakları Tamamlayıcı</h1>
         
         <label for="tckn-input">TC Kimlik No'nun İlk 9 Hanesini Girin:</label>
-        <input type="text" id="tckn-input" maxlength="9" placeholder="Örn: 100000001" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 9)">
-        
-        <button onclick="tamamlayiciyiCalistir()">TCKN'yi Hesapla ve Tamamla</button>
+        <input 
+            type="text" 
+            id="tckn-input" 
+            maxlength="9" 
+            placeholder="Örn: 100000001" 
+            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 9)"
+            onkeyup="tamamlayiciyiCalistir()"
+        >
         
         <h2>Sonuç:</h2>
         <div id="sonuc">Lütfen ilk 9 haneyi giriniz...</div>
