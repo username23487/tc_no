@@ -3,244 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EggApps Algoritma Kontrol Merkezi</title>
-    <style>
-        :root {
-            --primary-color: #ff9900;
-            --background-color: #f4f7f6;
-            --card-background: #ffffff;
-            --text-color: #333;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --warn-color: #ffc107; 
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-        }
-
-        .container {
-            background-color: var(--card-background);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 450px;
-            margin-top: 50px;
-        }
-
-        h1 {
-            color: var(--text-color);
-            font-size: 1.8em;
-            margin-bottom: 25px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-        }
-
-        .eggapps {
-            float: right;
-            font-weight: 900;
-            color: var(--primary-color);
-            font-size: 1.2em;
-            letter-spacing: 1px;
-        }
-        
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
-            appearance: none;
-            background-color: #fff;
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%23333333" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 10px top 50%;
-            background-size: 16px;
-        }
-        
-        .select-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 0.9em;
-        }
-
-        /* Input alanı ve butonlar */
-        input[type="text"], input[type="number"] {
-            width: calc(100% - 20px);
-            padding: 12px 10px;
-            margin-bottom: 20px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            box-sizing: content-box;
-            font-size: 1.1em;
-            text-align: center;
-            transition: border-color 0.3s;
-        }
-        
-        .action-button {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .action-button:hover {
-            background-color: #e68a00;
-        }
-
-
-        input[type="text"].error-border, input[type="number"].error-border {
-            border-color: var(--error-color) !important;
-        }
-        
-        input[type="text"].success-border, input[type="number"].success-border {
-            border-color: var(--success-color) !important;
-        }
-        
-        input[type="text"].warn-border, input[type="number"].warn-border {
-            border-color: var(--warn-color) !important;
-        }
-
-        #sonuc {
-            margin-top: 25px;
-            padding: 15px;
-            border: 2px solid var(--primary-color);
-            background-color: #fffaf0;
-            border-radius: 6px;
-            min-height: 30px;
-            font-weight: bold;
-            font-size: 1.2em;
-            text-align: center;
-            transition: all 0.3s;
-        }
-
-        #sonuc.error-box {
-            border-color: var(--error-color);
-            background-color: #f8d7da;
-            color: var(--error-color);
-        }
-        
-        #sonuc.success-box {
-            border-color: var(--success-color);
-            background-color: #d4edda;
-            color: var(--success-color);
-        }
-        
-        #sonuc.warn-box {
-            border-color: var(--warn-color);
-            background-color: #fff3cd;
-            color: var(--warn-color);
-        }
-        
-    </style>
+    <title>Algoritma Doğrulama ve Üretim Aracı</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container"> 
-        <span class="eggapps">EggApps</span>
-        <h1>🧮 Algoritma Kontrol Merkezi</h1>
+
+    <div class="container">
+        <h1>🚀 Algoritma Doğrulama ve Üretim Aracı</h1>
         
-        <div class="select-group">
-            <label for="proje-secim">Proje Seçiniz:</label>
+        <div class="header-controls">
+            <label for="proje-secim">Proje Seçimi:</label>
             <select id="proje-secim" onchange="resetAndChangeProject()">
-                <option value="vkn">🏢 VKN Kontrol & Tamamlama (YENİ)</option>
-                <option value="tckn">🇹🇷 TCKN Kontrol & Tamamlama</option>
-                <option value="kredi_karti">💳 Kredi Kartı Doğrulama & Tamamlama</option>
-                <option value="iban">🏦 IBAN Kontrol (Mod 97)</option>
-                <option value="telefon">📱 Telefon Numarası Kontrol & Üretim</option>
-                <option value="eposta">📧 E-Posta Sözdizimi Kontrolü (Regex)</option>
-                <option value="sifre">🔑 Şifre Gücü Kontrol & Üretim</option>
+                <option value="">-- Lütfen Seçim Yapın --</option>
+                <option value="tckn">1. T.C. Kimlik No (TCKN)</option>
+                <option value="vkn">2. Vergi Kimlik No (VKN)</option>
+                <option value="iban">3. IBAN (Uluslararası Banka Hesap No)</option>
+                <option value="kredi_karti">4. Kredi/Banka Kartı (Luhn)</option>
+                <option value="telefon">5. GSM Telefon Numarası</option>
+                <option value="eposta">6. E-Posta Adresi (Sözdizimi)</option>
+                <option value="sifre">7. Şifre Gücü Kontrolü</option>
             </select>
         </div>
 
-        <div id="vkn-uretim-grup" class="select-group" style="display:block;">
-            <button class="action-button" onclick="vknUret()">🏢 Rastgele Geçerli VKN Üret (10 Hane)</button>
-        </div>
-        
-        <div id="tckn-uretim-grup" class="select-group" style="display:none;">
-            <button class="action-button" onclick="tcknUret()">🇹🇷 Rastgele Geçerli TCKN Üret</button>
+        <div class="input-area">
+            <label id="input-label" for="input-alan">Lütfen bir proje seçimi yapın:</label>
+            <input type="text" id="input-alan" placeholder="" maxlength="50">
         </div>
 
-        <div id="telefon-uretim-grup" class="select-group" style="display:none;">
-            <label for="operator-secim">Üretilecek Operatör:</label>
-            <select id="operator-secim">
-                <option value="turkcell">Turkcell (53X)</option>
-                <option value="vodafone">Vodafone (54X)</option>
-                <option value="turktelekom">Türk Telekom (50X/55X)</option>
-            </select>
-            <button class="action-button" onclick="telefonUret()">📱 Rastgele Numara Üret</button>
-        </div>
-        
-        <div id="eposta-uretim-grup" class="select-group" style="display:none;">
-            <button class="action-button" onclick="epostaUret()">📧 Rastgele Geçerli E-Posta Üret</button>
-        </div>
-        
-        <div id="sifre-uretim-grup" class="select-group" style="display:none;">
-            <label for="sifre-uzunluk">Üretilecek Şifre Uzunluğu:</label>
-            <input type="number" id="sifre-uzunluk" min="8" max="30" value="12" style="text-align: left; margin-bottom: 10px; width: 50%;">
-            <button class="action-button" onclick="sifreUret()">🔑 Rastgele Güçlü Şifre Üret</button>
-        </div>
-        
-        <div id="kart-uretim-grup" class="select-group" style="display:none;">
-            <label for="kart-marka-secim">Üretilecek Kart Türü:</label>
-            <select id="kart-marka-secim" onchange="setUretimHedefi()">
-                <option value="4_16">Visa (4xxx - 16 Hane)</option>
-                <option value="5_16">Mastercard (5xxx - 16 Hane)</option>
-                <option value="3_15">Amex (34xx/37xx - 15 Hane)</option>
-            </select>
-            <button class="action-button" onclick="kartUret()">⭐ Rastgele Kart Üret</button>
-        </div>
-        
-        <div id="iban-uretim-grup" class="select-group" style="display:none;">
-            <button class="action-button" onclick="ibanUret()">🏦 Türkiye IBAN Oluştur (TR-26 Karakter)</button>
-        </div>
+        <div class="opsiyon-gruplari">
+            
+            <div id="vkn-uretim-grup" class="control-group" style="display: none;">
+                <button onclick="vknUret()" class="uret-button">Rastgele VKN Üret</button>
+            </div>
+            
+            <div id="tckn-uretim-grup" class="control-group" style="display: none;">
+                <button onclick="tcknUret()" class="uret-button">Rastgele TCKN Üret</button>
+            </div>
+            
+            <div id="iban-uretim-grup" class="control-group" style="display: none;">
+                <button onclick="ibanUret()" class="uret-button">Geçerli IBAN Üret (TR)</button>
+            </div>
 
+            <div id="kredi-karti-grup" class="control-group" style="display: none;">
+                <div id="kart-marka-secim-grup" class="inline-select">
+                    <label for="kart-marka-secim">Marka:</label>
+                    <select id="kart-marka-secim" onchange="setUretimHedefi()">
+                        <option value="4_16">Visa (16 Hane)</option>
+                        <option value="5_16">Mastercard (16 Hane)</option>
+                        <option value="9_16">Troy (16 Hane)</option>
+                        <option value="3_15">Amex (15 Hane)</option>
+                    </select>
+                </div>
+                <div id="kart-uzunluk-secim-grup" class="inline-select">
+                    <label for="kart-uzunluk-secim">Hedef Uzunluk:</label>
+                    <input type="number" id="kart-uzunluk-secim" value="16" readonly class="readonly-input">
+                </div>
+                <button onclick="kartUret()" class="uret-button">Geçerli Kart Numarası Üret</button>
+            </div>
+            
+            <div id="telefon-uretim-grup" class="control-group" style="display: none;">
+                <div id="operator-secim-grup" class="inline-select">
+                    <label for="operator-secim">Operatör:</label>
+                    <select id="operator-secim">
+                        <option value="turkcell">Turkcell</option>
+                        <option value="vodafone">Vodafone</option>
+                        <option value="turktelekom">Türk Telekom (Avea/TTMobil)</option>
+                    </select>
+                </div>
+                <button onclick="telefonUret()" class="uret-button">Rastgele Numara Üret</button>
+            </div>
 
-        <div id="kart-uzunluk-secim-grup" class="select-group" style="display:none;">
-            <label for="kart-uzunluk-secim">Hedef Kart Uzunluğu:</label>
-            <select id="kart-uzunluk-secim" onchange="calistirici()">
-                <option value="16">16 Hane (Visa/Mastercard/Troy)</option>
-                <option value="15">15 Hane (Amex)</option>
-                <option value="13">13 Hane</option>
-                <option value="19">19 Hane</option>
-            </select>
+            <div id="eposta-uretim-grup" class="control-group" style="display: none;">
+                <button onclick="epostaUret()" class="uret-button">Rastgele E-Posta Üret</button>
+            </div>
+
+            <div id="sifre-uretim-grup" class="control-group" style="display: none;">
+                <div class="inline-select">
+                    <label for="sifre-uzunluk">Uzunluk:</label>
+                    <input type="number" id="sifre-uzunluk" value="12" min="8" max="30" class="readonly-input">
+                </div>
+                <button onclick="sifreUret()" class="uret-button">Güçlü Şifre Üret</button>
+            </div>
+            
         </div>
         
-        <label id="input-label" for="input-alan">Vergi Kimlik No'nun İlk 9 VEYA Tamamını (10 hane) Girin:</label>
-        <input 
-            type="text" 
-            id="input-alan" 
-            maxlength="10" 
-            placeholder="9 hane tamamlama yapar, 10 hane doğrular" 
-            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-            onkeyup="calistirici()"
-        >
-        
-        <h2>Sonuç:</h2>
-        <div id="sonuc">Lütfen bir proje seçin ve haneleri giriniz...</div>
+        <div id="sonuc" class="default-box">Lütfen projenizi seçin ve ilk girişi yapınız...</div>
     </div>
-    
+
     <script src="script.js"></script>
+
 </body>
 </html>

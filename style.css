@@ -1,0 +1,176 @@
+/* Genel Sıfırlama ve Değişkenler */
+:root {
+    --primary-color: #007bff; /* Mavi */
+    --success-color: #28a745; /* Yeşil */
+    --error-color: #dc3545;   /* Kırmızı */
+    --warn-color: #ffc107;    /* Sarı */
+    --default-bg: #f8f9fa;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f7f9;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: 100%;
+    max-width: 700px;
+    margin-top: 50px;
+}
+
+h1 {
+    color: #343a40;
+    margin-bottom: 25px;
+    font-size: 1.8em;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+/* Seçim Alanları ve Kontroller */
+.header-controls, .input-area {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+#proje-secim, #input-alan, .inline-select select, .inline-select input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#proje-secim:focus, #input-alan:focus, .inline-select select:focus, .inline-select input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Input Kenarlık Durumları */
+.success-border {
+    border: 2px solid var(--success-color) !important;
+}
+
+.error-border {
+    border: 2px solid var(--error-color) !important;
+}
+
+.warn-border {
+    border: 2px solid var(--warn-color) !important;
+}
+
+/* Opsiyon Grupları ve Üret Butonları */
+.opsiyon-gruplari {
+    margin-bottom: 25px;
+}
+
+.control-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 0;
+    border-top: 1px dashed #e9ecef;
+}
+
+.control-group label {
+    display: inline;
+    margin-bottom: 0;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.uret-button {
+    padding: 10px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.1s;
+    flex-shrink: 0; /* Butonun küçülmesini engelle */
+}
+
+.uret-button:hover {
+    background-color: #0056b3;
+}
+
+.uret-button:active {
+    transform: scale(0.98);
+}
+
+.inline-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-grow: 1; /* Alanda yer kaplamasını sağla */
+}
+
+.inline-select select, .inline-select input {
+    width: auto;
+    max-width: 120px;
+}
+
+.readonly-input {
+    background-color: #e9ecef;
+    cursor: default;
+}
+
+/* SONUÇ Kutucuğu Stilleri */
+#sonuc {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    font-size: 1.1em;
+    line-height: 1.5;
+    margin-top: 15px;
+    border: 1px solid transparent;
+}
+
+.default-box {
+    background-color: var(--default-bg);
+    color: #6c757d;
+    border-color: #ced4da;
+}
+
+.success-box {
+    background-color: #d4edda;
+    color: var(--success-color);
+    border-color: #c3e6cb;
+}
+
+.error-box {
+    background-color: #f8d7da;
+    color: var(--error-color);
+    border-color: #f5c6cb;
+}
+
+.warn-box {
+    background-color: #fff3cd;
+    color: #856404;
+    border-color: #ffeeba;
+}
