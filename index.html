@@ -13,7 +13,7 @@
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             --error-color: #dc3545;
             --success-color: #28a745;
-            --warn-color: #ffc107; /* Zayıf/Orta için sarı */
+            --warn-color: #ffc107; 
         }
         
         body {
@@ -81,7 +81,7 @@
         }
 
         /* Input alanı ve butonlar */
-        input[type="text"] {
+        input[type="text"], input[type="number"] {
             width: calc(100% - 20px);
             padding: 12px 10px;
             margin-bottom: 20px;
@@ -111,15 +111,15 @@
         }
 
 
-        input[type="text"].error-border {
+        input[type="text"].error-border, input[type="number"].error-border {
             border-color: var(--error-color) !important;
         }
         
-        input[type="text"].success-border {
+        input[type="text"].success-border, input[type="number"].success-border {
             border-color: var(--success-color) !important;
         }
         
-        input[type="text"].warn-border {
+        input[type="text"].warn-border, input[type="number"].warn-border {
             border-color: var(--warn-color) !important;
         }
 
@@ -164,15 +164,20 @@
         <div class="select-group">
             <label for="proje-secim">Proje Seçiniz:</label>
             <select id="proje-secim" onchange="resetAndChangeProject()">
+                <option value="vkn">🏢 VKN Kontrol & Tamamlama (YENİ)</option>
                 <option value="tckn">🇹🇷 TCKN Kontrol & Tamamlama</option>
                 <option value="kredi_karti">💳 Kredi Kartı Doğrulama & Tamamlama</option>
                 <option value="iban">🏦 IBAN Kontrol (Mod 97)</option>
                 <option value="telefon">📱 Telefon Numarası Kontrol & Üretim</option>
                 <option value="eposta">📧 E-Posta Sözdizimi Kontrolü (Regex)</option>
-                <option value="sifre">🔑 Şifre Gücü Kontrol & Üretim (GÜNCEL)</option>
+                <option value="sifre">🔑 Şifre Gücü Kontrol & Üretim</option>
             </select>
         </div>
 
+        <div id="vkn-uretim-grup" class="select-group" style="display:block;">
+            <button class="action-button" onclick="vknUret()">🏢 Rastgele Geçerli VKN Üret (10 Hane)</button>
+        </div>
+        
         <div id="tckn-uretim-grup" class="select-group" style="display:none;">
             <button class="action-button" onclick="tcknUret()">🇹🇷 Rastgele Geçerli TCKN Üret</button>
         </div>
@@ -222,12 +227,12 @@
             </select>
         </div>
         
-        <label id="input-label" for="input-alan">TC Kimlik No'nun İlk 9 VEYA Tamamını (11 hane) Girin:</label>
+        <label id="input-label" for="input-alan">Vergi Kimlik No'nun İlk 9 VEYA Tamamını (10 hane) Girin:</label>
         <input 
             type="text" 
             id="input-alan" 
-            maxlength="11" 
-            placeholder="9 hane tamamlama yapar, 11 hane doğrular" 
+            maxlength="10" 
+            placeholder="9 hane tamamlama yapar, 10 hane doğrular" 
             oninput="this.value = this.value.replace(/[^0-9]/g, '')"
             onkeyup="calistirici()"
         >
